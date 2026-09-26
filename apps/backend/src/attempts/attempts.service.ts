@@ -12,10 +12,10 @@ export class AttemptsService {
     private readonly quizService: QuizService,
   ) {}
 
-  async submit({
-    quizVersionId,
-    answers,
-  }: SubmitAttemptDto): Promise<{ id: string }> {
+  async submit(
+    { quizVersionId, answers }: SubmitAttemptDto,
+    userId: string | null,
+  ): Promise<{ id: string }> {
     const { definition } = await this.quizService.getVersion(quizVersionId);
 
     const problems = validateAnswers(definition.questions, answers);
@@ -25,6 +25,7 @@ export class AttemptsService {
 
     return this.prisma.quizAttempt.create({
       data: {
+        userId,
         quizVersionId,
         result: scoreAnswers(definition.scoring, answers),
         answers: {
@@ -37,6 +38,13 @@ export class AttemptsService {
         },
       },
       select: { id: true },
+    });
+  }
+
+  async claimGuestAttempt(attemptId: string, userId: string): Promise<void> {
+    await this.prisma.quizAttempt.updateMany({
+      where: { id: attemptId, userId: null },
+      data: { userId },
     });
   }
 }
