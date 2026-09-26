@@ -55,6 +55,14 @@ export function SignUpForm() {
     }
   }
 
+  // The email is locked on the password step, so any change goes through the existing-account check again.
+  function editEmail() {
+    form.resetField("password");
+    form.clearErrors();
+    setStep("email");
+    form.setFocus("email");
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (step === "password") {
       return submit(event);
@@ -83,8 +91,21 @@ export function SignUpForm() {
             type="email"
             label="Email"
             autoComplete="email"
+            readOnly={step === "password"}
             invalid={Boolean(errors.email)}
             aria-describedby={messageId}
+            trailing={
+              step === "password" && (
+                <button
+                  type="button"
+                  onClick={editEmail}
+                  aria-label="Change email"
+                  className="text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+                >
+                  Change
+                </button>
+              )
+            }
             {...form.register("email")}
           />
           {step === "password" && (

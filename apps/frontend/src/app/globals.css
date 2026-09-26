@@ -49,6 +49,16 @@
   animation: needle-sweep 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes progress-in {
+  from {
+    width: 0;
+  }
+}
+
+@utility animate-progress-in {
+  animation: progress-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @utility animate-fade-in {
   animation: fade-in 0.2s ease-out;
 }
@@ -60,7 +70,8 @@
 }
 
 /* Expands and collapses a <details> smoothly where the browser can animate to `auto` height;
-   elsewhere it simply opens. */
+   elsewhere it simply opens. Space the content with padding, not margin: a margin escapes the
+   clipped box and snaps when it hides. */
 @utility details-animated {
   interpolate-size: allow-keywords;
 

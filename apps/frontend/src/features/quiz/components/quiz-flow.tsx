@@ -73,6 +73,7 @@ function QuizSteps({ quiz, questions, initialIndex }: QuizStepsProps) {
       <ProgressBar value={(index + 1) / questions.length} />
       <OptionList
         question={question}
+        questionTexts={questions.map(({ text }) => text)}
         selectedKey={answers[question.key]}
         onSelect={(optionKey) => answer(question.key, optionKey)}
       />
