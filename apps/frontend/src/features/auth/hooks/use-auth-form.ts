@@ -46,5 +46,9 @@ export function useAuthForm(
     }
   });
 
-  return { form, submit, redirectTo, isPending: form.formState.isSubmitting || isRedirecting };
+  const { errors, isSubmitting } = form.formState;
+  // One message line for the whole form: field problems first, in field order, then the backend's.
+  const message = errors.email?.message ?? errors.password?.message ?? errors.root?.message;
+
+  return { form, submit, redirectTo, message, isPending: isSubmitting || isRedirecting };
 }

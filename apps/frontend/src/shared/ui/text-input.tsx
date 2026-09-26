@@ -4,14 +4,13 @@ import { cn } from "@/shared/lib/cn";
 type TextInputProps = ComponentProps<"input"> & {
   name: string;
   label: string;
-  error?: string;
+  invalid?: boolean;
 };
 
-export function TextInput({ name, label, error, id = name, className, ...props }: TextInputProps) {
-  const errorId = `${id}-error`;
-
+// The error text lives in the form's FormMessage (linked via aria-describedby); the field only turns red.
+export function TextInput({ name, label, invalid = false, id = name, className, ...props }: TextInputProps) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <>
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
@@ -19,21 +18,15 @@ export function TextInput({ name, label, error, id = name, className, ...props }
         id={id}
         name={name}
         placeholder={label}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-invalid={invalid || undefined}
         className={cn(
-          "h-14 rounded-lg border border-line bg-white px-4 text-ink placeholder:text-muted",
+          "h-14 rounded-lg border border-line bg-white px-4 text-ink transition-colors placeholder:text-muted",
           "focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none",
-          error && "border-danger",
+          invalid && "border-danger focus:border-danger focus:ring-danger/20",
           className,
         )}
         {...props}
       />
-      {error && (
-        <p id={errorId} className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
+    </>
   );
 }

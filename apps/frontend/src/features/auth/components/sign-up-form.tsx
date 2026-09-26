@@ -1,10 +1,10 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
 import { ApiError, getErrorMessage } from "@/shared/api/api-error";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
-import { ErrorMessage } from "@/shared/ui/error-message";
+import { FormMessage } from "@/shared/ui/form-message";
 import { TextInput } from "@/shared/ui/text-input";
 import { TextLink } from "@/shared/ui/text-link";
 import { checkEmail } from "../api/check-email";
@@ -26,15 +26,15 @@ const redirectExistingAccount = (error: unknown, { email }: { email: string }) =
   error instanceof ApiError && error.status === 409 ? signInUrl(email) : undefined;
 
 export function SignUpForm() {
+  const messageId = useId();
   const [step, setStep] = useState<Step>("email");
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const { form, submit, redirectTo, isPending } = useAuthForm(signUpSchema, signUp, {
+  const { form, submit, redirectTo, message, isPending } = useAuthForm(signUpSchema, signUp, {
     redirectOnError: redirectExistingAccount,
   });
   const { errors } = form.formState;
 
   async function continueWithEmail() {
-    form.clearErrors("root");
     if (!(await form.trigger("email"))) {
       return;
     }
@@ -42,6 +42,7 @@ export function SignUpForm() {
     setIsCheckingEmail(true);
     try {
       const { registered } = await checkEmail(email);
+      form.clearErrors("root");
       if (registered) {
         redirectTo(signInUrl(email));
       } else {
@@ -76,26 +77,30 @@ export function SignUpForm() {
         </>
       }
     >
-      <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <TextInput
-          type="email"
-          label="Email"
-          autoComplete="email"
-          error={errors.email?.message}
-          {...form.register("email")}
-        />
-        {step === "password" && (
+      <form noValidate onSubmit={handleSubmit} className="flex flex-col">
+        <div className="flex flex-col gap-3">
           <TextInput
-            type="password"
-            label="Create Password"
-            autoComplete="new-password"
-            autoFocus
-            error={errors.password?.message}
-            {...form.register("password")}
+            type="email"
+            label="Email"
+            autoComplete="email"
+            invalid={Boolean(errors.email)}
+            aria-describedby={messageId}
+            {...form.register("email")}
           />
-        )}
-        {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
-        <Button type="submit" isLoading={isPending || isCheckingEmail} className="mt-2 w-full">
+          {step === "password" && (
+            <TextInput
+              type="password"
+              label="Create Password"
+              autoComplete="new-password"
+              autoFocus
+              invalid={Boolean(errors.password)}
+              aria-describedby={messageId}
+              {...form.register("password")}
+            />
+          )}
+        </div>
+        <FormMessage id={messageId} message={message} />
+        <Button type="submit" isLoading={isPending || isCheckingEmail} className="w-full">
           Get My Results
         </Button>
       </form>
