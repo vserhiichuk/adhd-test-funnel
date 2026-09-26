@@ -8,3 +8,62 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  /// Stored lowercased; normalization happens in the application layer.
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  attempts     QuizAttempt[]
+
+  @@map("users")
+}
+
+/// Immutable snapshot of a published quiz. Any content or scoring change is
+/// published as a new version; existing rows are never updated.
+model QuizVersion {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  /// Identifies the quiz across its versions, e.g. "adhd".
+  quizSlug    String        @map("quiz_slug")
+  version     Int
+  /// Questions, answer options and scoring rules exactly as users saw them.
+  definition  Json
+  publishedAt DateTime      @default(now()) @map("published_at") @db.Timestamptz(3)
+  attempts    QuizAttempt[]
+
+  @@unique([quizSlug, version])
+  @@map("quiz_versions")
+}
+
+/// A completed pass of a quiz. Retakes create new attempts; the latest one is
+/// the user's current result, older ones are kept as history.
+model QuizAttempt {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  /// Null while the attempt belongs to a guest; set when they sign up.
+  userId        String?      @map("user_id") @db.Uuid
+  quizVersionId String       @map("quiz_version_id") @db.Uuid
+  /// Scoring outcome snapshot taken at completion, e.g. { outcome, score }.
+  result        Json
+  completedAt   DateTime     @default(now()) @map("completed_at") @db.Timestamptz(3)
+  user          User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizVersion   QuizVersion  @relation(fields: [quizVersionId], references: [id], onDelete: Restrict)
+  answers       QuizAnswer[]
+
+  @@index([userId, completedAt(sort: Desc)])
+  @@map("quiz_attempts")
+}
+
+/// Raw answer to one question, interpreted through the attempt's quiz version.
+model QuizAnswer {
+  attemptId   String      @map("attempt_id") @db.Uuid
+  /// Stable semantic key: the same key across versions means comparable answers.
+  questionKey String      @map("question_key")
+  /// Selected option keys or other raw input, e.g. { "optionKeys": ["agree"] }.
+  value       Json
+  attempt     QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@id([attemptId, questionKey])
+  @@map("quiz_answers")
+}
