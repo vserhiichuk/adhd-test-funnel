@@ -1,8 +1,9 @@
 "use client";
 
+import { useId } from "react";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
-import { ErrorMessage } from "@/shared/ui/error-message";
+import { FormMessage } from "@/shared/ui/form-message";
 import { TextInput } from "@/shared/ui/text-input";
 import { TextLink } from "@/shared/ui/text-link";
 import { signIn } from "../api/sign-in";
@@ -16,7 +17,8 @@ type SignInFormProps = {
 };
 
 export function SignInForm({ defaultEmail }: SignInFormProps) {
-  const { form, submit, isPending } = useAuthForm(signInSchema, signIn, { defaultEmail });
+  const messageId = useId();
+  const { form, submit, message, isPending } = useAuthForm(signInSchema, signIn, { defaultEmail });
   const { errors } = form.formState;
 
   return (
@@ -33,24 +35,28 @@ export function SignInForm({ defaultEmail }: SignInFormProps) {
         </>
       }
     >
-      <form noValidate onSubmit={submit} className="flex flex-col gap-3">
-        <TextInput
-          type="email"
-          label="Email"
-          autoComplete="email"
-          error={errors.email?.message}
-          {...form.register("email")}
-        />
-        <TextInput
-          type="password"
-          label="Password"
-          autoComplete="current-password"
-          autoFocus={Boolean(defaultEmail)}
-          error={errors.password?.message}
-          {...form.register("password")}
-        />
-        {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
-        <Button type="submit" isLoading={isPending} className="mt-2 w-full">
+      <form noValidate onSubmit={submit} className="flex flex-col">
+        <div className="flex flex-col gap-3">
+          <TextInput
+            type="email"
+            label="Email"
+            autoComplete="email"
+            invalid={Boolean(errors.email)}
+            aria-describedby={messageId}
+            {...form.register("email")}
+          />
+          <TextInput
+            type="password"
+            label="Password"
+            autoComplete="current-password"
+            autoFocus={Boolean(defaultEmail)}
+            invalid={Boolean(errors.password)}
+            aria-describedby={messageId}
+            {...form.register("password")}
+          />
+        </div>
+        <FormMessage id={messageId} message={message} />
+        <Button type="submit" isLoading={isPending} className="w-full">
           Sign In
         </Button>
       </form>

@@ -23,7 +23,7 @@ export function StepNavigation({
   return (
     <nav
       aria-label="Quiz navigation"
-      className="mx-auto mt-auto flex w-full max-w-3xl items-center justify-between pt-12"
+      className="mx-auto flex w-full max-w-3xl items-center justify-between"
     >
       <NavButton aria-label="Previous question" onClick={onBack}>
         <ArrowLeftIcon className="size-5" />

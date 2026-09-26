@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { routes } from "@/shared/config/routes";
-import { ErrorMessage } from "@/shared/ui/error-message";
+import { FormMessage } from "@/shared/ui/form-message";
 import { useSubmitQuiz } from "../hooks/use-submit-quiz";
 import { firstUnansweredIndex, splitQuiz } from "../lib/quiz-steps";
 import { useQuizAnswers } from "../state/use-quiz-answers";
@@ -76,15 +76,17 @@ function QuizSteps({ quiz, questions, initialIndex }: QuizStepsProps) {
         selectedKey={answers[question.key]}
         onSelect={(optionKey) => answer(question.key, optionKey)}
       />
-      {error && <ErrorMessage className="text-center text-base">{error}</ErrorMessage>}
-      <StepNavigation
-        current={index + 1}
-        total={questions.length}
-        canGoNext={question.key in answers}
-        isSubmitting={isSubmitting}
-        onBack={goBack}
-        onNext={goNext}
-      />
+      <div className="mt-auto flex flex-col gap-3 pt-2">
+        <FormMessage className="text-center text-base" message={error} />
+        <StepNavigation
+          current={index + 1}
+          total={questions.length}
+          canGoNext={question.key in answers}
+          isSubmitting={isSubmitting}
+          onBack={goBack}
+          onNext={goNext}
+        />
+      </div>
     </div>
   );
 }
