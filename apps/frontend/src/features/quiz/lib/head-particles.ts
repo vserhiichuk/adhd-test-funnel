@@ -8,21 +8,20 @@ const HEAD_CENTER_Y = 0.53;
 const ASSEMBLE_SECONDS = 1.8;
 const DRIFT = 0.8;
 
-// A soft bubble with a translucent centre and a denser rim, like the design's particles.
+// Particles are pre-rendered sprites: a disc whose centre turns white as it gets more hollow,
+// up to a ring with an opaque white centre that hides the particles behind it.
 const SPRITE_SIZE = 64;
-const BUBBLE_STOPS: [offset: number, alpha: number][] = [
-  [0, 0.5],
-  [0.5, 0.62],
-  [0.8, 1],
-  [0.92, 0.9],
-  [1, 0],
-];
+const HOLLOW_LEVELS = 4;
+const OPACITY_LEVELS = 10;
+const RING_WIDTH = 0.5;
+const EDGE_SOFTNESS = 0.15;
+const WHITE_RGB = "255, 255, 255";
 
 type Particle = {
   x: number;
   y: number;
   radius: number;
-  opacity: number;
+  sprite: HTMLCanvasElement;
   fromX: number;
   fromY: number;
   phase: number;
@@ -34,26 +33,26 @@ export type HeadRenderer = (seconds: number | null) => void;
 
 /** Draws the head; `seconds` since start animates it, `null` draws the final frame. */
 export function createHeadRenderer(context: CanvasRenderingContext2D): HeadRenderer {
-  const particles = decodeParticles();
-  const sprite = createBubbleSprite();
+  const particles = decodeParticles(createSprites());
   context.imageSmoothingQuality = "high";
-  return (seconds) => renderFrame(context, particles, sprite, seconds);
+  return (seconds) => renderFrame(context, particles, seconds);
 }
 
-function decodeParticles(): Particle[] {
+function decodeParticles(sprites: HTMLCanvasElement[][]): Particle[] {
   const random = seededRandom(7);
   const data = HEAD_PARTICLE_DATA.replace(/\s/g, "");
   const particles: Particle[] = [];
 
   for (let i = 0; i < data.length; i += 6) {
-    const [x, y, size] = [0, 2, 4].map((offset) => parseInt(data.slice(i + offset, i + offset + 2), 36));
+    const [x, y, packed] = [0, 2, 4].map((offset) => parseInt(data.slice(i + offset, i + offset + 2), 36));
+    const shape = Math.floor(packed / 10);
     const angle = random() * Math.PI * 2;
     const distance = (0.5 + random() * 0.6) * HEAD_BOX.height;
     particles.push({
       x,
       y,
-      radius: Math.floor(size / 10) / 2,
-      opacity: (size % 10) / 9,
+      radius: (shape % 16) / 2,
+      sprite: sprites[Math.floor(shape / 16)][packed % 10],
       fromX: HEAD_BOX.width / 2 + Math.cos(angle) * distance,
       fromY: HEAD_BOX.height / 2 + Math.sin(angle) * distance,
       phase: random() * Math.PI * 2,
@@ -61,32 +60,43 @@ function decodeParticles(): Particle[] {
       delay: random() * 0.6,
     });
   }
-  return particles;
+  // Small particles first, so the larger rings sit on top, as in the design.
+  return particles.sort((a, b) => a.radius - b.radius);
 }
 
-function createBubbleSprite(): HTMLCanvasElement {
+function createSprites(): HTMLCanvasElement[][] {
+  return Array.from({ length: HOLLOW_LEVELS }, (_, hollow) =>
+    Array.from({ length: OPACITY_LEVELS }, (_, opacity) => createSprite(hollow, opacity)),
+  );
+}
+
+function createSprite(hollow: number, opacity: number): HTMLCanvasElement {
   const sprite = document.createElement("canvas");
   sprite.width = SPRITE_SIZE;
   sprite.height = SPRITE_SIZE;
   const context = sprite.getContext("2d");
   if (context) {
-    const center = SPRITE_SIZE / 2;
-    const gradient = context.createRadialGradient(center, center, 0, center, center, center);
-    for (const [offset, alpha] of BUBBLE_STOPS) {
-      gradient.addColorStop(offset, `rgba(${HEAD_PARTICLE_RGB}, ${alpha})`);
+    const radius = SPRITE_SIZE / 2;
+    fillSoftCircle(context, radius, HEAD_PARTICLE_RGB, opacity / (OPACITY_LEVELS - 1));
+    if (hollow > 0) {
+      fillSoftCircle(context, radius * (1 - RING_WIDTH), WHITE_RGB, hollow / (HOLLOW_LEVELS - 1));
     }
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
   }
   return sprite;
 }
 
-function renderFrame(
-  context: CanvasRenderingContext2D,
-  particles: Particle[],
-  sprite: HTMLCanvasElement,
-  seconds: number | null,
-): void {
+// A disc whose edge fades out, so particles stay round and soft when drawn a few pixels wide.
+function fillSoftCircle(context: CanvasRenderingContext2D, radius: number, rgb: string, alpha: number): void {
+  const center = SPRITE_SIZE / 2;
+  const gradient = context.createRadialGradient(center, center, 0, center, center, radius);
+  gradient.addColorStop(0, `rgba(${rgb}, ${alpha})`);
+  gradient.addColorStop(1 - EDGE_SOFTNESS, `rgba(${rgb}, ${alpha})`);
+  gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+}
+
+function renderFrame(context: CanvasRenderingContext2D, particles: Particle[], seconds: number | null): void {
   const { width, height } = context.canvas;
   const scale = (height * HEAD_SHARE_OF_HEIGHT) / HEAD_BOX.height;
   const offsetX = width * HEAD_CENTER_X - (HEAD_BOX.width * scale) / 2;
@@ -102,8 +112,8 @@ function renderFrame(
     const y = lerp(particle.fromY, particle.y, progress) + Math.cos(wave * 0.8) * DRIFT * progress;
     const size = particle.radius * 2 * scale;
 
-    context.globalAlpha = particle.opacity * progress * (0.85 + 0.15 * Math.sin(wave * 1.7));
-    context.drawImage(sprite, offsetX + x * scale - size / 2, offsetY + y * scale - size / 2, size, size);
+    context.globalAlpha = progress * (0.9 + 0.1 * Math.sin(wave * 1.7));
+    context.drawImage(particle.sprite, offsetX + x * scale - size / 2, offsetY + y * scale - size / 2, size, size);
   }
   context.globalAlpha = 1;
 }
