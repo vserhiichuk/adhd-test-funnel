@@ -4,7 +4,6 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  IsUrl,
   Max,
   Min,
   validateSync,
@@ -24,9 +23,6 @@ export class Env {
   @Min(0)
   @Max(65535)
   PORT: number = 4000;
-
-  @IsUrl({ require_tld: false })
-  WEB_ORIGIN: string;
 
   @IsString()
   @IsNotEmpty()
