@@ -3,6 +3,11 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { scoreAnswers } from '../quiz/evaluation/score-answers.js';
 import { validateAnswers } from '../quiz/evaluation/validate-answers.js';
 import { QuizService } from '../quiz/quiz.service.js';
+import {
+  type CompletedAttempt,
+  toAnswerRow,
+  toCompletedAttempt,
+} from './attempt.mapper.js';
 import type { SubmitAttemptDto } from './dto/submit-attempt.dto.js';
 
 @Injectable()
@@ -28,17 +33,22 @@ export class AttemptsService {
         userId,
         quizVersionId,
         result: scoreAnswers(definition.scoring, answers),
-        answers: {
-          createMany: {
-            data: answers.map(({ questionKey, optionKey }) => ({
-              questionKey,
-              value: { optionKey },
-            })),
-          },
-        },
+        answers: { createMany: { data: answers.map(toAnswerRow) } },
       },
       select: { id: true },
     });
+  }
+
+  async findByUser(
+    userId: string,
+    quizSlug: string,
+  ): Promise<CompletedAttempt[]> {
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: { userId, quizVersion: { quizSlug } },
+      orderBy: { completedAt: 'desc' },
+      include: { quizVersion: true, answers: true },
+    });
+    return attempts.map(toCompletedAttempt);
   }
 
   async claimGuestAttempt(attemptId: string, userId: string): Promise<void> {

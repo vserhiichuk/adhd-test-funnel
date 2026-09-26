@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { QuizVersion } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type {
-  PublishedQuiz,
-  QuizDefinition,
-} from './definition/quiz-definition.types.js';
+import type { PublishedQuiz } from './definition/quiz-definition.types.js';
+import { toPublishedQuiz } from './published-quiz.mapper.js';
 
 @Injectable()
 export class QuizService {
@@ -30,14 +27,4 @@ export class QuizService {
     }
     return toPublishedQuiz(version);
   }
-}
-
-// Definitions are validated before publishing, so the stored JSON is trusted.
-function toPublishedQuiz(version: QuizVersion): PublishedQuiz {
-  return {
-    id: version.id,
-    quizSlug: version.quizSlug,
-    version: version.version,
-    definition: version.definition as QuizDefinition,
-  };
 }
