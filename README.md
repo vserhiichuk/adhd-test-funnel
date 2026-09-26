@@ -12,6 +12,9 @@ apps/
       config/          env validation
       prisma/          PrismaService (global module)
       health/          GET /health (API + DB check)
+      quiz/
+        definition/    quiz definition types and integrity validation
+        releases/      quiz versions defined in code, published on startup
   frontend/            Next.js app (port 3000)
     src/
       app/             App Router pages
@@ -48,6 +51,8 @@ yarn dev:frontend
 - Frontend: http://localhost:3000
 - Backend health check: http://localhost:4000/health
 
+There is no seed step: the backend publishes the quiz versions defined in code on startup.
+
 ## Data model
 
 ```
@@ -75,12 +80,17 @@ Rules the model relies on:
 
 ## Architecture decisions
 
-_TBD_
+- **Quiz content is code-owned, the database holds the published snapshot.** Each version is a typed `QuizRelease` in `src/quiz/releases`, reviewed like any other code change. On startup `QuizReleasePublisher` validates every release (unique snake_case keys, scoring covers exactly the options of scored questions, every score maps to an outcome), inserts missing versions and refuses to start if a published version no longer matches its code.
+- **Scoring rules are data inside the version.** The definition names a scoring `strategy` and its parameters (points per option, outcome bands on a 0–100 scale), so thresholds and weights are versioned together with the questions they apply to.
 
 ## Trade-offs
 
-_TBD_
+- **Publishing on startup instead of a seed script.** Code and data can't drift apart and there is no manual step to forget on deploy, at the cost of the app writing reference data during boot. With several instances starting at once, a unique-constraint race can fail one of them; it succeeds on restart.
 
 ## Evolving the quiz and report
 
-_TBD_
+**Changing the quiz** (questions, options, points or thresholds):
+
+1. Add `src/quiz/releases/adhd-v2.release.ts` with `version: 2` and append it to `QUIZ_RELEASES`. Never edit a published release — startup fails if you do.
+2. Keep the `key` of questions whose meaning is unchanged; give a new key to any question whose meaning changes.
+3. Deploy. The new version is published on startup and becomes current for new attempts; earlier attempts keep pointing to the version they were taken on.
