@@ -1,0 +1,12 @@
+{
+  "name": "adhd-test",
+  "private": true,
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "install:all": "yarn --cwd apps/backend install && yarn --cwd apps/frontend install",
+    "dev:backend": "yarn --cwd apps/backend start:dev",
+    "dev:frontend": "yarn --cwd apps/frontend dev"
+  },
+  "packageManager": "yarn@1.22.22"
+}
