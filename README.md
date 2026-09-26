@@ -9,12 +9,15 @@ apps/
   backend/             NestJS API (port 4000)
     prisma/            Prisma schema and migrations
     src/
+      common/          shared helpers
       config/          env validation
       prisma/          PrismaService (global module)
       health/          GET /health (API + DB check)
-      quiz/
+      quiz/            GET /quizzes/:slug
         definition/    quiz definition types and integrity validation
         releases/      quiz versions defined in code, published on startup
+        evaluation/    answer validation and scoring (pure functions)
+      attempts/        POST /attempts
   frontend/            Next.js app (port 3000)
     src/
       app/             App Router pages
@@ -53,6 +56,15 @@ yarn dev:frontend
 
 There is no seed step: the backend publishes the quiz versions defined in code on startup.
 
+## API
+
+| Method | Path              | Description                                                                                          |
+| ------ | ----------------- | ---------------------------------------------------------------------------------------------------- |
+| GET    | `/quizzes/:slug`  | Current (latest) version of a quiz: `{ id, version, questions }`. Scoring rules are not exposed.      |
+| POST   | `/attempts`       | Submit a completed quiz: `{ quizVersionId, answers: [{ questionKey, optionKey }] }` → `{ id }`.       |
+
+Validation errors return `400` with a list of problems in `message`, e.g. `question "gender" is not answered`.
+
 ## Data model
 
 ```
@@ -68,7 +80,7 @@ users 1 ──── * quiz_attempts * ──── 1 quiz_versions
 | `users`         | Account: email (stored lowercased, unique) and argon2 password hash.                                      |
 | `quiz_versions` | Immutable snapshot of a published quiz (`quiz_slug` + `version`). `definition` (JSONB) holds questions, answer options and scoring rules exactly as users saw them. |
 | `quiz_attempts` | One completed pass of a quiz. `user_id` is null for guests until they sign up. `result` (JSONB) is the scoring snapshot (`{ outcome, score }`) taken at completion. |
-| `quiz_answers`  | Raw answer per question (`attempt_id` + `question_key`), e.g. `{ "optionKeys": ["agree"] }`.              |
+| `quiz_answers`  | Raw answer per question (`attempt_id` + `question_key`), e.g. `{ "optionKey": "agree" }`; the shape is defined by the question type. |
 
 Rules the model relies on:
 
@@ -82,6 +94,9 @@ Rules the model relies on:
 
 - **Quiz content is code-owned, the database holds the published snapshot.** Each version is a typed `QuizRelease` in `src/quiz/releases`, reviewed like any other code change. On startup `QuizReleasePublisher` validates every release (unique snake_case keys, scoring covers exactly the options of scored questions, every score maps to an outcome), inserts missing versions and refuses to start if a published version no longer matches its code.
 - **Scoring rules are data inside the version.** The definition names a scoring `strategy` and its parameters (points per option, outcome bands on a 0–100 scale), so thresholds and weights are versioned together with the questions they apply to.
+- **Evaluation is pure domain logic.** `validateAnswers` and `scoreAnswers` (`src/quiz/evaluation`) take a definition and answers and return problems or a result — no Nest or Prisma inside, so services stay thin orchestration.
+- **Attempts are validated against the version the user saw.** The client sends back the `quizVersionId` it was served, so publishing a new version mid-session can't mismatch answers and questions.
+- **The result is not returned on submit.** `POST /attempts` returns only the attempt id; the score is shown in the report, which requires an account — matching the Quiz → Account → Report funnel.
 
 ## Trade-offs
 
@@ -94,3 +109,5 @@ Rules the model relies on:
 1. Add `src/quiz/releases/adhd-v2.release.ts` with `version: 2` and append it to `QUIZ_RELEASES`. Never edit a published release — startup fails if you do.
 2. Keep the `key` of questions whose meaning is unchanged; give a new key to any question whose meaning changes.
 3. Deploy. The new version is published on startup and becomes current for new attempts; earlier attempts keep pointing to the version they were taken on.
+
+**Changing the scoring algorithm:** add a new strategy type to the `ScoringRules` union, a matching `case` in `scoreAnswers` and its checks in `validateQuizRelease`, then use it in a new release. Existing versions keep their original strategy.

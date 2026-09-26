@@ -1,3 +1,8 @@
+import {
+  difference,
+  ensure,
+  findDuplicates,
+} from '../../common/validation.utils.js';
 import { MAX_SCORE } from '../quiz.constants.js';
 import type {
   NormalizedSumScoring,
@@ -124,17 +129,4 @@ function validateKeys(
       .map((key) => `${describe(key)} must be snake_case`),
     ...findDuplicates(keys).map((key) => `duplicate ${describe(key)}`),
   ];
-}
-
-function ensure(condition: boolean, problem: string): string[] {
-  return condition ? [] : [problem];
-}
-
-function difference(values: string[], excluded: string[]): string[] {
-  return values.filter((value) => !excluded.includes(value));
-}
-
-function findDuplicates(values: string[]): string[] {
-  const repeated = values.filter((value, i) => values.indexOf(value) !== i);
-  return [...new Set(repeated)];
 }
