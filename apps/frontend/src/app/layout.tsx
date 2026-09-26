@@ -6,7 +6,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BrainsMate · ADHD Trait Test",
+  title: { default: "BrainsMate · ADHD Trait Test", template: "%s · BrainsMate" },
   description: "Find out how ADHD traits influence your focus, energy, and daily life",
 };
 

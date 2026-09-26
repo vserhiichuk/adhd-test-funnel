@@ -22,7 +22,7 @@ export function TextInput({ name, label, error, id = name, className, ...props }
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className={cn(
-          "h-12 rounded-lg border border-line bg-white px-4 text-ink placeholder:text-muted",
+          "h-14 rounded-lg border border-line bg-white px-4 text-ink placeholder:text-muted",
           "focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none",
           error && "border-danger",
           className,
