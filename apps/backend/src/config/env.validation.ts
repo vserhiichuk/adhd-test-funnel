@@ -36,9 +36,9 @@ export class Env {
   @IsNotEmpty()
   JWT_SECRET: string;
 
-  @IsString()
-  @IsNotEmpty()
-  JWT_EXPIRES_IN: string = '7d';
+  @IsInt()
+  @Min(1)
+  SESSION_TTL_DAYS: number = 7;
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {

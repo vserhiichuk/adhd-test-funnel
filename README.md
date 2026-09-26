@@ -18,6 +18,9 @@ apps/
         releases/      quiz versions defined in code, published on startup
         evaluation/    answer validation and scoring (pure functions)
       attempts/        POST /attempts
+      session/         session and guest-attempt cookies, SessionGuard
+      users/           user persistence
+      auth/            sign up, sign in, sign out, current user
   frontend/            Next.js app (port 3000)
     src/
       app/             App Router pages
@@ -61,9 +64,13 @@ There is no seed step: the backend publishes the quiz versions defined in code o
 | Method | Path              | Description                                                                                          |
 | ------ | ----------------- | ---------------------------------------------------------------------------------------------------- |
 | GET    | `/quizzes/:slug`  | Current (latest) version of a quiz: `{ id, version, questions }`. Scoring rules are not exposed.      |
-| POST   | `/attempts`       | Submit a completed quiz: `{ quizVersionId, answers: [{ questionKey, optionKey }] }` → `{ id }`.       |
+| POST   | `/attempts`       | Submit a completed quiz: `{ quizVersionId, answers: [{ questionKey, optionKey }] }` → `{ id }`. Signed-in: saved to the user. Guest: sets the `guest_attempt` cookie. |
+| POST   | `/auth/sign-up`   | `{ email, password }` (8–128 chars) → `{ id, email }`, starts a session, claims the guest attempt. `409` if the email is taken. |
+| POST   | `/auth/sign-in`   | `{ email, password }` → `{ id, email }`, starts a session, claims the guest attempt. `401` on wrong credentials. |
+| POST   | `/auth/sign-out`  | Ends the session (`204`).                                                                            |
+| GET    | `/auth/me`        | Current user `{ id, email }`, `401` without a session.                                               |
 
-Validation errors return `400` with a list of problems in `message`, e.g. `question "gender" is not answered`.
+Validation errors return `400` with a list of problems in `message`, e.g. `question "gender" is not answered`. Emails are trimmed and lowercased before validation.
 
 ## Data model
 
@@ -97,10 +104,15 @@ Rules the model relies on:
 - **Evaluation is pure domain logic.** `validateAnswers` and `scoreAnswers` (`src/quiz/evaluation`) take a definition and answers and return problems or a result — no Nest or Prisma inside, so services stay thin orchestration.
 - **Attempts are validated against the version the user saw.** The client sends back the `quizVersionId` it was served, so publishing a new version mid-session can't mismatch answers and questions.
 - **The result is not returned on submit.** `POST /attempts` returns only the attempt id; the score is shown in the report, which requires an account — matching the Quiz → Account → Report funnel.
+- **Stateless session in an httpOnly cookie.** `session` holds a JWT `{ sub: userId }` (`HttpOnly`, `SameSite=Lax`, `Secure` in production, lifetime `SESSION_TTL_DAYS`), so the token is never readable from JavaScript. `SessionService` owns every cookie; `SessionGuard` + `@CurrentUserId()` protect routes.
+- **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
 
 ## Trade-offs
 
 - **Publishing on startup instead of a seed script.** Code and data can't drift apart and there is no manual step to forget on deploy, at the cost of the app writing reference data during boot. With several instances starting at once, a unique-constraint race can fail one of them; it succeeds on restart.
+- **No refresh tokens or server-side sessions.** A single JWT keeps auth simple; the cost is that a session can't be revoked before it expires (sign-out only clears the cookie).
+- **Unclaimed guest attempts stay in the database.** Guests who never sign up leave attempts with `user_id = null`; a periodic cleanup job would be the next step.
+- **No rate limiting on sign-in.** Out of scope for the task; in production it would sit in front of `/auth/*`.
 
 ## Evolving the quiz and report
 
