@@ -29,6 +29,8 @@ apps/
       app/             App Router routes, root layout, design tokens
       features/        one folder per feature (quiz, auth, report): api/, components/, state
         quiz/          landing (entry question), quiz steps, answers store, submission
+        auth/          two-step sign-up, sign-in, zod schemas, shared form hook
+      proxy.ts         optimistic session check for /report
       shared/
         api/           fetch clients (browser: /api, server: API_URL + forwarded cookies), ApiError
         config/        route paths
@@ -130,6 +132,8 @@ Rules the model relies on:
 - **The UI renders the quiz the API serves.** Pages fetch the current quiz version on the server (`serverApi`, rendered per request, so `next build` never calls the backend) and pass it to client components; questions, options and their order are never hard-coded. The first `profile` question is the landing's entry question, the rest are quiz steps.
 - **Quiz progress lives on the client until submission.** Answers are kept in a small `useSyncExternalStore` store mirrored to `sessionStorage` under the quiz version id, so a reload resumes at the first unanswered question and a new quiz version never reuses stale answers. Choosing the entry answer on the landing starts a fresh attempt; nothing reaches the backend until `POST /attempts`.
 - **The landing illustration is drawn, not shipped as an image.** The particle head is a canvas animation (particles assemble into the head, then drift); positions, sizes and opacity of its ~2.9k particles were traced from the design export into `head-particle-data.ts` (~17 KB). It renders the final frame without animation under `prefers-reduced-motion`.
+- **Auth forms validate early, the backend decides.** Sign-up is one react-hook-form form with two steps (email, then password, as in the design); zod schemas mirror the backend rules for instant feedback, and backend errors (`409` taken email, `401` wrong credentials) are shown as returned.
+- **Route protection is optimistic in `proxy.ts`, authoritative on the server.** `proxy.ts` only checks that a `session` cookie exists before `/report`; the backend verifies it when the report is loaded. Signed-in users are deliberately not redirected away from `/sign-in`: the frontend can't verify the JWT, so a stale cookie would bounce between the two pages.
 - **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
 - **The report is built at read time from pluggable section builders.** `ReportsService` loads the user's attempts (answers + quiz version each) into a `ReportContext` `{ current, previous }`; every section is a `SectionBuilder` — `(context) => section | null` — listed in `REPORT_SECTIONS`. A builder returns `null` when it lacks data (e.g. no outcome content, or no comparable earlier attempt), so a section never breaks the report. Texts live in `reports/content`, separate from the logic; the content's shape can pick the section type too (emotional regulation is a list for High and a paragraph for Low).
 - **Results are snapshots, report copy is live.** Score and outcome are fixed at submission; the report texts and sections are rendered from the current code, so improved copy and new sections reach old attempts too.
