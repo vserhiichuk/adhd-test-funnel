@@ -38,3 +38,5 @@ export type QuizRelease = {
   version: number;
   definition: QuizDefinition;
 };
+
+export type PublishedQuiz = QuizRelease & { id: string };
