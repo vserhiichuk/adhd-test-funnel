@@ -1,7 +1,14 @@
-export default function Home() {
+import { SiteHeader } from "@/shared/ui/site-header";
+
+export default function HomePage() {
   return (
-    <main className="flex flex-1 items-center justify-center p-4">
-      <h1 className="text-2xl font-semibold">ADHD Test</h1>
-    </main>
+    <>
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center px-4">
+        <h1 className="text-center font-display text-4xl font-bold sm:text-5xl">
+          Discover Your <span className="text-accent">ADHD Trait Profile</span>
+        </h1>
+      </main>
+    </>
   );
 }

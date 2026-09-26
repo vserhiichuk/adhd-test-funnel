@@ -24,10 +24,13 @@ apps/
       reports/         GET /reports/me
         sections/      one builder per report section
         content/       report texts per outcome
-  frontend/            Next.js app (port 3000)
+  frontend/            Next.js app (port 3000), proxies /api/* to the backend
     src/
-      app/             App Router pages
-      lib/api.ts       fetch wrapper for the API
+      app/             App Router routes, root layout, design tokens
+      features/        one folder per feature (quiz, auth, report)
+      shared/
+        api/           typed fetch client, ApiError
+        ui/            design-system components (Button, TextInput, Logo, header, footer)
 docker-compose.yml     PostgreSQL 17
 ```
 
@@ -58,7 +61,7 @@ yarn dev:frontend
 ```
 
 - Frontend: http://localhost:3000
-- Backend health check: http://localhost:4000/health
+- Backend health check: http://localhost:4000/health (also reachable through the frontend at http://localhost:3000/api/health)
 
 There is no seed step: the backend publishes the quiz versions defined in code on startup.
 
@@ -121,6 +124,7 @@ Rules the model relies on:
 - **Attempts are validated against the version the user saw.** The client sends back the `quizVersionId` it was served, so publishing a new version mid-session can't mismatch answers and questions.
 - **The result is not returned on submit.** `POST /attempts` returns only the attempt id; the score is shown in the report, which requires an account — matching the Quiz → Account → Report funnel.
 - **Stateless session in an httpOnly cookie.** `session` holds a JWT `{ sub: userId }` (`HttpOnly`, `SameSite=Lax`, `Secure` in production, lifetime `SESSION_TTL_DAYS`), so the token is never readable from JavaScript. `SessionService` owns every cookie; `SessionGuard` + `@CurrentUserId()` protect routes.
+- **The frontend reaches the API through its own origin.** Next.js rewrites `/api/*` to `API_URL`, so the browser only ever talks to the frontend domain: session cookies stay first-party even when the apps are deployed on different domains (`SameSite=Lax` would drop them cross-site), and the backend needs no CORS. `API_URL` is server-only and is read at build time, so it must be set before `next build`.
 - **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
 - **The report is built at read time from pluggable section builders.** `ReportsService` loads the user's attempts (answers + quiz version each) into a `ReportContext` `{ current, previous }`; every section is a `SectionBuilder` — `(context) => section | null` — listed in `REPORT_SECTIONS`. A builder returns `null` when it lacks data (e.g. no outcome content, or no comparable earlier attempt), so a section never breaks the report. Texts live in `reports/content`, separate from the logic; the content's shape can pick the section type too (emotional regulation is a list for High and a paragraph for Low).
 - **Results are snapshots, report copy is live.** Score and outcome are fixed at submission; the report texts and sections are rendered from the current code, so improved copy and new sections reach old attempts too.
