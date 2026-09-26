@@ -1,18 +1,29 @@
+import { cn } from "@/shared/lib/cn";
 import type { QuizQuestion } from "../types";
+
+const QUESTION_TEXT =
+  "col-start-1 row-start-1 self-center text-center font-display text-2xl leading-snug font-semibold sm:text-3xl";
 
 type OptionListProps = {
   question: QuizQuestion;
+  /** Texts of every step, so the heading reserves the height of the longest one. */
+  questionTexts: string[];
   selectedKey: string | undefined;
   onSelect: (optionKey: string) => void;
 };
 
-export function OptionList({ question, selectedKey, onSelect }: OptionListProps) {
+export function OptionList({ question, questionTexts, selectedKey, onSelect }: OptionListProps) {
   return (
     <fieldset className="mx-auto w-full max-w-3xl">
-      <legend className="mb-8 w-full">
-        <h1 className="text-center font-display text-2xl leading-snug font-semibold sm:text-3xl">
-          {question.text}
-        </h1>
+      {/* All questions share one grid cell: the heading is as tall as the longest question at any
+          width, so the options don't jump between steps. Only the current one is visible. */}
+      <legend className="mb-8 grid w-full">
+        <h1 className={QUESTION_TEXT}>{question.text}</h1>
+        {questionTexts.map((text) => (
+          <span key={text} aria-hidden className={cn(QUESTION_TEXT, "invisible")}>
+            {text}
+          </span>
+        ))}
       </legend>
       <div className="flex flex-col gap-3">
         {question.options.map((option) => (

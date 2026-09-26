@@ -15,7 +15,7 @@ export function FaqAccordion({ section }: { section: FaqSection }) {
                 <ChevronDownIcon className="size-4" />
               </span>
             </summary>
-            <p className="mt-3 pr-11 text-muted">{answer}</p>
+            <p className="pt-3 pr-11 text-muted">{answer}</p>
           </details>
         ))}
       </div>

@@ -23,11 +23,11 @@ export function SignInForm({ defaultEmail }: SignInFormProps) {
 
   return (
     <AuthPanel
-      title="Welcome back"
+      title="Sign in"
       description={
         defaultEmail
           ? "This email already has an account. Sign in to see your report."
-          : "Sign in to see your ADHD report"
+          : "Welcome back! Let’s continue your learning journey"
       }
       footer={
         <>
@@ -57,7 +57,7 @@ export function SignInForm({ defaultEmail }: SignInFormProps) {
         </div>
         <FormMessage id={messageId} message={message} />
         <Button type="submit" isLoading={isPending} className="w-full">
-          Sign In
+          Sign in
         </Button>
       </form>
     </AuthPanel>

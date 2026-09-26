@@ -10,8 +10,9 @@ export function ProgressBar({ value }: { value: number }) {
       aria-valuenow={percent}
       className="h-1 w-full overflow-hidden rounded-full bg-surface"
     >
+      {/* Grows in from zero on mount, then transitions between steps. */}
       <div
-        className="h-full rounded-full bg-accent transition-[width] duration-300"
+        className="h-full rounded-full bg-accent transition-[width] duration-300 motion-safe:animate-progress-in motion-reduce:transition-none"
         style={{ width: `${percent}%` }}
       />
     </div>
