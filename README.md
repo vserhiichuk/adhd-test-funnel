@@ -21,6 +21,9 @@ apps/
       session/         session and guest-attempt cookies, SessionGuard
       users/           user persistence
       auth/            sign up, sign in, sign out, current user
+      reports/         GET /reports/me
+        sections/      one builder per report section
+        content/       report texts per outcome
   frontend/            Next.js app (port 3000)
     src/
       app/             App Router pages
@@ -69,6 +72,19 @@ There is no seed step: the backend publishes the quiz versions defined in code o
 | POST   | `/auth/sign-in`   | `{ email, password }` → `{ id, email }`, starts a session, claims the guest attempt. `401` on wrong credentials. |
 | POST   | `/auth/sign-out`  | Ends the session (`204`).                                                                            |
 | GET    | `/auth/me`        | Current user `{ id, email }`, `401` without a session.                                               |
+| GET    | `/reports/me`     | Report for the user's latest attempt: `{ attemptId, completedAt, sections }`. `401` without a session, `404` if no quiz was completed. |
+
+Report sections are a discriminated union on `type`, so the client renders each by its type:
+
+| `type`     | Fields                                                              | Used for                               |
+| ---------- | ------------------------------------------------------------------- | -------------------------------------- |
+| `score`    | `label`, `score`, `maxScore`                                        | Score gauge with the outcome label     |
+| `progress` | `previousScore`, `previousCompletedAt`, `currentScore`, `summary`   | Change since the previous attempt      |
+| `text`     | `body`                                                              | Understanding; emotional regulation (Low) |
+| `list`     | `marker` (`check` / `bullet`), `intro?`, `items`, `note?`           | Strengths; emotional regulation (High) |
+| `faq`      | `items: [{ question, answer }]`                                     | Frequently asked questions             |
+
+Every section also has `id` and `title`.
 
 Validation errors return `400` with a list of problems in `message`, e.g. `question "gender" is not answered`. Emails are trimmed and lowercased before validation.
 
@@ -106,6 +122,9 @@ Rules the model relies on:
 - **The result is not returned on submit.** `POST /attempts` returns only the attempt id; the score is shown in the report, which requires an account — matching the Quiz → Account → Report funnel.
 - **Stateless session in an httpOnly cookie.** `session` holds a JWT `{ sub: userId }` (`HttpOnly`, `SameSite=Lax`, `Secure` in production, lifetime `SESSION_TTL_DAYS`), so the token is never readable from JavaScript. `SessionService` owns every cookie; `SessionGuard` + `@CurrentUserId()` protect routes.
 - **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
+- **The report is built at read time from pluggable section builders.** `ReportsService` loads the user's attempts (answers + quiz version each) into a `ReportContext` `{ current, previous }`; every section is a `SectionBuilder` — `(context) => section | null` — listed in `REPORT_SECTIONS`. A builder returns `null` when it lacks data (e.g. no outcome content, or no comparable earlier attempt), so a section never breaks the report. Texts live in `reports/content`, separate from the logic; the content's shape can pick the section type too (emotional regulation is a list for High and a paragraph for Low).
+- **Results are snapshots, report copy is live.** Score and outcome are fixed at submission; the report texts and sections are rendered from the current code, so improved copy and new sections reach old attempts too.
+- **Progress compares only attempts of the same quiz version.** Different questions measure different things, so after a quiz update the comparison reappears once the user has two attempts on the new version.
 
 ## Trade-offs
 
@@ -113,6 +132,7 @@ Rules the model relies on:
 - **No refresh tokens or server-side sessions.** A single JWT keeps auth simple; the cost is that a session can't be revoked before it expires (sign-out only clears the cookie).
 - **Unclaimed guest attempts stay in the database.** Guests who never sign up leave attempts with `user_id = null`; a periodic cleanup job would be the next step.
 - **No rate limiting on sign-in.** Out of scope for the task; in production it would sit in front of `/auth/*`.
+- **The report loads the full attempt history.** Simple and enough for a handful of retakes; with long histories the context would load only what the registered builders need.
 
 ## Evolving the quiz and report
 
@@ -123,3 +143,9 @@ Rules the model relies on:
 3. Deploy. The new version is published on startup and becomes current for new attempts; earlier attempts keep pointing to the version they were taken on.
 
 **Changing the scoring algorithm:** add a new strategy type to the `ScoringRules` union, a matching `case` in `scoreAnswers` and its checks in `validateQuizRelease`, then use it in a new release. Existing versions keep their original strategy.
+
+**Adding a report section:** write a `SectionBuilder` in `src/reports/sections` and add it to `REPORT_SECTIONS` in `build-report.ts` (a new section `type` also needs a renderer on the client). The context gives it everything it may depend on:
+
+- `current.result` — outcome and score (`outcomeSection()` wraps builders whose texts depend on the outcome);
+- `current.answers` / `current.quiz` — answers to specific questions, interpreted through the version they were given on; look questions up by `questionKey` and return `null` if the version didn't have them;
+- `previous` — all earlier attempts, newest first, each with its own answers and version (see `progress.section.ts`).
