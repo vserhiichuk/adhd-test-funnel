@@ -9,23 +9,42 @@ import type { Credentials, User } from "../types";
 
 type AuthRequest = (credentials: Credentials) => Promise<User>;
 
-export function useAuthForm(schema: z.ZodType<Credentials, Credentials>, request: AuthRequest) {
+type AuthFormOptions = {
+  defaultEmail?: string;
+  /** Where to send the user instead of showing the error, when a page answers it better than a message. */
+  redirectOnError?: (error: unknown, credentials: Credentials) => string | undefined;
+};
+
+export function useAuthForm(
+  schema: z.ZodType<Credentials, Credentials>,
+  request: AuthRequest,
+  { defaultEmail = "", redirectOnError }: AuthFormOptions = {},
+) {
   const router = useRouter();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const form = useForm<Credentials>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: defaultEmail, password: "" },
   });
+
+  function redirectTo(href: string) {
+    setIsRedirecting(true);
+    router.replace(href);
+  }
 
   const submit = form.handleSubmit(async (credentials) => {
     try {
       await request(credentials);
-      setIsRedirecting(true);
-      router.replace(routes.report);
+      redirectTo(routes.report);
     } catch (error) {
-      form.setError("root", { message: getErrorMessage(error) });
+      const redirect = redirectOnError?.(error, credentials);
+      if (redirect) {
+        redirectTo(redirect);
+      } else {
+        form.setError("root", { message: getErrorMessage(error) });
+      }
     }
   });
 
-  return { form, submit, isPending: form.formState.isSubmitting || isRedirecting };
+  return { form, submit, redirectTo, isPending: form.formState.isSubmitting || isRedirecting };
 }

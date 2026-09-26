@@ -15,6 +15,7 @@ import { CurrentUserId } from '../session/current-user-id.decorator.js';
 import { SessionGuard } from '../session/session.guard.js';
 import { SessionService } from '../session/session.service.js';
 import { AuthService } from './auth.service.js';
+import { CheckEmailDto } from './dto/check-email.dto.js';
 import { SignInDto } from './dto/sign-in.dto.js';
 import { SignUpDto } from './dto/sign-up.dto.js';
 import { type UserResponse, toUserResponse } from './dto/user.response.js';
@@ -25,6 +26,14 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,
   ) {}
+
+  @Post('check-email')
+  @HttpCode(HttpStatus.OK)
+  async checkEmail(
+    @Body() { email }: CheckEmailDto,
+  ): Promise<{ registered: boolean }> {
+    return { registered: await this.authService.isRegistered(email) };
+  }
 
   @Post('sign-up')
   async signUp(

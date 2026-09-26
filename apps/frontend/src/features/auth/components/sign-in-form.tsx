@@ -10,14 +10,23 @@ import { useAuthForm } from "../hooks/use-auth-form";
 import { signInSchema } from "../schemas";
 import { AuthPanel } from "./auth-panel";
 
-export function SignInForm() {
-  const { form, submit, isPending } = useAuthForm(signInSchema, signIn);
+type SignInFormProps = {
+  /** Set when sign-up found an existing account for this email. */
+  defaultEmail?: string;
+};
+
+export function SignInForm({ defaultEmail }: SignInFormProps) {
+  const { form, submit, isPending } = useAuthForm(signInSchema, signIn, { defaultEmail });
   const { errors } = form.formState;
 
   return (
     <AuthPanel
       title="Welcome back"
-      description="Sign in to see your ADHD report"
+      description={
+        defaultEmail
+          ? "This email already has an account. Sign in to see your report."
+          : "Sign in to see your ADHD report"
+      }
       footer={
         <>
           New here? <TextLink href={routes.home}>Take the test</TextLink>
@@ -36,6 +45,7 @@ export function SignInForm() {
           type="password"
           label="Password"
           autoComplete="current-password"
+          autoFocus={Boolean(defaultEmail)}
           error={errors.password?.message}
           {...form.register("password")}
         />

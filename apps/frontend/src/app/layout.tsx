@@ -8,6 +8,7 @@ const figtree = Figtree({ variable: "--font-figtree", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: { default: "BrainsMate · ADHD Trait Test", template: "%s · BrainsMate" },
   description: "Find out how ADHD traits influence your focus, energy, and daily life",
+  icons: { icon: "/icons/brain.svg" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
