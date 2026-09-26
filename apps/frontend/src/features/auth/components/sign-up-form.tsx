@@ -1,13 +1,16 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import { ApiError, getErrorMessage } from "@/shared/api/api-error";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { ErrorMessage } from "@/shared/ui/error-message";
 import { TextInput } from "@/shared/ui/text-input";
 import { TextLink } from "@/shared/ui/text-link";
+import { checkEmail } from "../api/check-email";
 import { signUp } from "../api/sign-up";
 import { useAuthForm } from "../hooks/use-auth-form";
+import { signInUrl } from "../lib/sign-in-url";
 import { signUpSchema } from "../schemas";
 import { AuthPanel } from "./auth-panel";
 
@@ -18,19 +21,45 @@ const DESCRIPTIONS: Record<Step, string> = {
   password: "Enter your password to access your full report",
 };
 
+// An existing account signs in instead: signing in claims the guest attempt just as sign-up does.
+const redirectExistingAccount = (error: unknown, { email }: { email: string }) =>
+  error instanceof ApiError && error.status === 409 ? signInUrl(email) : undefined;
+
 export function SignUpForm() {
   const [step, setStep] = useState<Step>("email");
-  const { form, submit, isPending } = useAuthForm(signUpSchema, signUp);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const { form, submit, redirectTo, isPending } = useAuthForm(signUpSchema, signUp, {
+    redirectOnError: redirectExistingAccount,
+  });
   const { errors } = form.formState;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function continueWithEmail() {
+    form.clearErrors("root");
+    if (!(await form.trigger("email"))) {
+      return;
+    }
+    const email = form.getValues("email");
+    setIsCheckingEmail(true);
+    try {
+      const { registered } = await checkEmail(email);
+      if (registered) {
+        redirectTo(signInUrl(email));
+      } else {
+        setStep("password");
+      }
+    } catch (error) {
+      form.setError("root", { message: getErrorMessage(error) });
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (step === "password") {
       return submit(event);
     }
     event.preventDefault();
-    if (await form.trigger("email")) {
-      setStep("password");
-    }
+    return continueWithEmail();
   }
 
   return (
@@ -66,7 +95,7 @@ export function SignUpForm() {
           />
         )}
         {errors.root && <ErrorMessage>{errors.root.message}</ErrorMessage>}
-        <Button type="submit" isLoading={isPending} className="mt-2 w-full">
+        <Button type="submit" isLoading={isPending || isCheckingEmail} className="mt-2 w-full">
           Get My Results
         </Button>
       </form>

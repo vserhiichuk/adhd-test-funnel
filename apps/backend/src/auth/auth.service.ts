@@ -34,6 +34,10 @@ export class AuthService {
     return user;
   }
 
+  async isRegistered(email: string): Promise<boolean> {
+    return (await this.usersService.findByEmail(email)) !== null;
+  }
+
   async getUser(userId: string): Promise<User> {
     const user = await this.usersService.findById(userId);
     if (!user) {

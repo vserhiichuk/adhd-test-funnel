@@ -19,6 +19,14 @@
   --font-display: var(--font-figtree);
 }
 
+/* Tailwind v4 resets buttons to the default cursor; interactive controls should show a pointer. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
