@@ -7,7 +7,12 @@ export const emotionalRegulationSection = outcomeSection(
       title: 'Your Emotional Regulation and Impulse Control',
     };
     return typeof emotionalRegulation === 'string'
-      ? { type: 'text', ...section, body: emotionalRegulation }
+      ? {
+          type: 'text',
+          ...section,
+          variant: 'plain',
+          body: emotionalRegulation,
+        }
       : { type: 'list', ...section, marker: 'bullet', ...emotionalRegulation };
   },
 );

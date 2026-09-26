@@ -29,7 +29,8 @@ apps/
       app/             App Router routes, root layout, design tokens
       features/        one folder per feature (quiz, auth, report): api/, components/, state
         quiz/          landing (entry question), quiz steps, answers store, submission
-        auth/          two-step sign-up, sign-in, zod schemas, shared form hook
+        auth/          two-step sign-up, sign-in, sign-out, zod schemas, shared form hook
+        report/        report page sections, score gauge, empty state
       proxy.ts         optimistic session check for /report
       shared/
         api/           fetch clients (browser: /api, server: API_URL + forwarded cookies), ApiError
@@ -87,7 +88,7 @@ Report sections are a discriminated union on `type`, so the client renders each 
 | ---------- | ------------------------------------------------------------------- | -------------------------------------- |
 | `score`    | `label`, `score`, `maxScore`                                        | Score gauge with the outcome label     |
 | `progress` | `previousScore`, `previousCompletedAt`, `currentScore`, `summary`   | Change since the previous attempt      |
-| `text`     | `body`                                                              | Understanding; emotional regulation (Low) |
+| `text`     | `variant` (`callout` / `plain`), `body`                             | Understanding; emotional regulation (Low) |
 | `list`     | `marker` (`check` / `bullet`), `intro?`, `items`, `note?`           | Strengths; emotional regulation (High) |
 | `faq`      | `items: [{ question, answer }]`                                     | Frequently asked questions             |
 
@@ -134,6 +135,7 @@ Rules the model relies on:
 - **The landing illustration is drawn, not shipped as an image.** The particle head is a canvas animation (particles assemble into the head, then drift); positions, sizes and opacity of its ~2.9k particles were traced from the design export into `head-particle-data.ts` (~17 KB). It renders the final frame without animation under `prefers-reduced-motion`.
 - **Auth forms validate early, the backend decides.** Sign-up is one react-hook-form form with two steps (email, then password, as in the design); zod schemas mirror the backend rules for instant feedback, and backend errors (`409` taken email, `401` wrong credentials) are shown as returned.
 - **Route protection is optimistic in `proxy.ts`, authoritative on the server.** `proxy.ts` only checks that a `session` cookie exists before `/report`; the backend verifies it when the report is loaded. Signed-in users are deliberately not redirected away from `/sign-in`: the frontend can't verify the JWT, so a stale cookie would bounce between the two pages.
+- **The report page is a server-rendered list of typed sections.** `/report` fetches `GET /reports/me` with the user's cookies (`401` → sign-in, `404` → "take the test" empty state) and renders each section by its `type`; the switch is exhaustive, so a new section type fails the build until it has a renderer. Presentation hints (`variant`, `marker`) come from the backend, so the UI never branches on section ids. The score is the full-width hero with an SVG gauge whose needle sweeps in (static under reduced motion); the FAQ uses native `<details>`, so the page ships almost no client JavaScript — only the sign-out button is interactive.
 - **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
 - **The report is built at read time from pluggable section builders.** `ReportsService` loads the user's attempts (answers + quiz version each) into a `ReportContext` `{ current, previous }`; every section is a `SectionBuilder` — `(context) => section | null` — listed in `REPORT_SECTIONS`. A builder returns `null` when it lacks data (e.g. no outcome content, or no comparable earlier attempt), so a section never breaks the report. Texts live in `reports/content`, separate from the logic; the content's shape can pick the section type too (emotional regulation is a list for High and a paragraph for Low).
 - **Results are snapshots, report copy is live.** Score and outcome are fixed at submission; the report texts and sections are rendered from the current code, so improved copy and new sections reach old attempts too.

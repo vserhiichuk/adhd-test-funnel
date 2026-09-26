@@ -18,6 +18,7 @@ export type ProgressSection = SectionBase<'progress'> & {
 };
 
 export type TextSection = SectionBase<'text'> & {
+  variant: 'callout' | 'plain';
   body: string;
 };
 
