@@ -27,9 +27,11 @@ apps/
   frontend/            Next.js app (port 3000), proxies /api/* to the backend
     src/
       app/             App Router routes, root layout, design tokens
-      features/        one folder per feature (quiz, auth, report)
+      features/        one folder per feature (quiz, auth, report): api/, components/, state
+        quiz/          landing (entry question), quiz steps, answers store, submission
       shared/
-        api/           typed fetch client, ApiError
+        api/           fetch clients (browser: /api, server: API_URL + forwarded cookies), ApiError
+        config/        route paths
         ui/            design-system components (Button, TextInput, Logo, header, footer)
 docker-compose.yml     PostgreSQL 17
 ```
@@ -125,6 +127,9 @@ Rules the model relies on:
 - **The result is not returned on submit.** `POST /attempts` returns only the attempt id; the score is shown in the report, which requires an account — matching the Quiz → Account → Report funnel.
 - **Stateless session in an httpOnly cookie.** `session` holds a JWT `{ sub: userId }` (`HttpOnly`, `SameSite=Lax`, `Secure` in production, lifetime `SESSION_TTL_DAYS`), so the token is never readable from JavaScript. `SessionService` owns every cookie; `SessionGuard` + `@CurrentUserId()` protect routes.
 - **The frontend reaches the API through its own origin.** Next.js rewrites `/api/*` to `API_URL`, so the browser only ever talks to the frontend domain: session cookies stay first-party even when the apps are deployed on different domains (`SameSite=Lax` would drop them cross-site), and the backend needs no CORS. `API_URL` is server-only and is read at build time, so it must be set before `next build`.
+- **The UI renders the quiz the API serves.** Pages fetch the current quiz version on the server (`serverApi`, rendered per request, so `next build` never calls the backend) and pass it to client components; questions, options and their order are never hard-coded. The first `profile` question is the landing's entry question, the rest are quiz steps.
+- **Quiz progress lives on the client until submission.** Answers are kept in a small `useSyncExternalStore` store mirrored to `sessionStorage` under the quiz version id, so a reload resumes at the first unanswered question and a new quiz version never reuses stale answers. Choosing the entry answer on the landing starts a fresh attempt; nothing reaches the backend until `POST /attempts`.
+- **The landing illustration is drawn, not shipped as an image.** The particle head is a canvas animation (particles assemble into the head, then drift); positions, sizes and opacity of its ~2.9k particles were traced from the design export into `head-particle-data.ts` (~17 KB). It renders the final frame without animation under `prefers-reduced-motion`.
 - **Guest attempts are claimed through a signed cookie.** A guest submission sets `guest_attempt` — a JWT `{ attemptId }` — instead of trusting an id sent by the client. Sign up *and* sign in assign that attempt to the user (only if it is still unowned), so a guest retake before signing in to an existing account also becomes the user's current result.
 - **The report is built at read time from pluggable section builders.** `ReportsService` loads the user's attempts (answers + quiz version each) into a `ReportContext` `{ current, previous }`; every section is a `SectionBuilder` — `(context) => section | null` — listed in `REPORT_SECTIONS`. A builder returns `null` when it lacks data (e.g. no outcome content, or no comparable earlier attempt), so a section never breaks the report. Texts live in `reports/content`, separate from the logic; the content's shape can pick the section type too (emotional regulation is a list for High and a paragraph for Low).
 - **Results are snapshots, report copy is live.** Score and outcome are fixed at submission; the report texts and sections are rendered from the current code, so improved copy and new sections reach old attempts too.

@@ -8,6 +8,7 @@
   --color-primary-hover: #26585f;
   --color-page: #f6f8fa;
   --color-surface: #f1f5f9;
+  --color-selected: #e8f3fd;
   --color-line: #d7e0ea;
   --color-footer: #1f2b45;
   --color-danger: #c2410c;
@@ -16,4 +17,22 @@
 @theme inline {
   --font-sans: var(--font-inter);
   --font-display: var(--font-figtree);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+@utility animate-chip {
+  animation:
+    fade-in 0.8s ease-out both,
+    float 6s ease-in-out infinite;
 }
