@@ -7,6 +7,8 @@ Quiz → Account creation → Report → Sign in.
 ```
 apps/
   backend/             NestJS API (port 4000)
+    Dockerfile         production image: applies migrations, then starts the API
+    railway.json       Railway build (Dockerfile) and health check
     prisma/            Prisma schema and migrations
     src/
       common/          shared helpers
@@ -45,6 +47,7 @@ The client and the server are independent apps with their own dependencies and l
 
 - **Backend:** NestJS 12 (ESM), Prisma 7 + PostgreSQL, class-validator, JWT in an httpOnly cookie, argon2
 - **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4, react-hook-form + zod
+- **Deployment:** backend and PostgreSQL on Railway (Docker image), frontend on Vercel
 
 ## Running locally
 
@@ -69,6 +72,45 @@ yarn dev:frontend
 - Backend health check: http://localhost:4000/health (also reachable through the frontend at http://localhost:3000/api/health)
 
 There is no seed step: the backend publishes the quiz versions defined in code on startup.
+
+### Trying the flow
+
+1. **Quiz → account → report.** Open `/`, pick a gender, answer the five statements, then create an account in two steps (email, password). The report opens with the score you just got.
+2. **Retake.** *Retake the test* in the report: a signed-in retake goes straight back to the report, which now compares the new score with the previous one.
+3. **Sign in.** *Sign out*, then sign in at `/sign-in` with the same credentials to see the latest report.
+4. **Existing account after a guest quiz.** Sign out, take the quiz again and enter the registered email at sign-up: you are sent to sign-in with the email filled in, and after signing in the quiz you just took becomes the current result.
+
+## Deployment
+
+```
+browser ──► Vercel: Next.js ──/api/*──► Railway: NestJS (Docker) ──► Railway: PostgreSQL
+```
+
+The browser only ever talks to the frontend domain (see [the API proxy decision](#architecture-decisions)), so there is no CORS or cross-site cookie setup.
+
+**Backend and database (Railway)**
+
+1. Create a project and add a **PostgreSQL** database.
+2. Add a service from this repository with **Root Directory** `apps/backend`. It builds `apps/backend/Dockerfile`; `railway.json` sets the `/health` check.
+3. Set the service variables:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+   - `JWT_SECRET` = a long random string, e.g. `openssl rand -base64 48`
+   - `NODE_ENV` = `production` (session cookies become `Secure`)
+4. Generate a public domain. Every deploy applies pending migrations, then the API publishes new quiz versions on boot.
+
+**Frontend (Vercel)**
+
+1. Import the repository with **Root Directory** `apps/frontend` (framework: Next.js).
+2. Set `API_URL` to the backend's public URL, e.g. `https://adhd-backend.up.railway.app`, for Production and Preview.
+3. Deploy. `API_URL` is read at build time, so redeploy the frontend after changing it.
+
+The backend image can be checked locally the same way it runs on Railway:
+
+```bash
+docker build -t adhd-backend apps/backend
+docker run -p 4000:4000 -e DATABASE_URL=postgresql://adhd:adhd@host.docker.internal:5432/adhd \
+  -e JWT_SECRET=change-me -e NODE_ENV=production adhd-backend
+```
 
 ## API
 
