@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/shared/ui/icons";
+import { Spinner } from "@/shared/ui/spinner";
 
 type StepNavigationProps = {
   current: number;
@@ -37,7 +38,7 @@ export function StepNavigation({
         disabled={!canGoNext || isSubmitting}
         onClick={onNext}
       >
-        <ArrowRightIcon className="size-5" />
+        {isSubmitting ? <Spinner /> : <ArrowRightIcon className="size-5" />}
       </NavButton>
     </nav>
   );
@@ -47,7 +48,7 @@ function NavButton(props: ComponentProps<"button">) {
   return (
     <button
       type="button"
-      className="inline-flex size-10 items-center justify-center rounded-lg bg-surface text-ink transition-colors hover:bg-line focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex size-10 items-center justify-center rounded-lg bg-surface text-ink transition-colors hover:bg-line focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-100"
       {...props}
     />
   );
