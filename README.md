@@ -91,7 +91,7 @@ The browser only ever talks to the frontend domain (see [the API proxy decision]
 **Backend and database (Railway)**
 
 1. Create a project and add a **PostgreSQL** database.
-2. Add a service from this repository with **Root Directory** `apps/backend`. It builds `apps/backend/Dockerfile`; `railway.json` sets the `/health` check.
+2. Add a service from this repository. In its settings set **Root Directory** to `apps/backend` (it builds the `Dockerfile` there) and **Config File Path** to `/apps/backend/railway.json`: Railway does not look for the config file inside the root directory, and the file sets the `/health` check.
 3. Set the service variables:
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
    - `JWT_SECRET` = a long random string, e.g. `openssl rand -base64 48`
