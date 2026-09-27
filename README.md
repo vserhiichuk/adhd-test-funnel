@@ -2,6 +2,8 @@
 
 Quiz → Account creation → Report → Sign in.
 
+**Live:** https://adhd-test-funnel.vercel.app (API: https://adhd-test-funnel-production.up.railway.app/health). See [Trying the flow](#trying-the-flow) for the scenarios to check.
+
 ## Structure
 
 ```
@@ -96,7 +98,8 @@ The browser only ever talks to the frontend domain (see [the API proxy decision]
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
    - `JWT_SECRET` = a long random string, e.g. `openssl rand -base64 48`
    - `NODE_ENV` = `production` (session cookies become `Secure`)
-4. Generate a public domain. Every deploy applies pending migrations, then the API publishes new quiz versions on boot.
+   - `PORT` = `4000`, so the port the API listens on is known when generating the domain
+4. Generate a public domain on port `4000`. Every deploy applies pending migrations, then the API publishes new quiz versions on boot.
 
 **Frontend (Vercel)**
 
