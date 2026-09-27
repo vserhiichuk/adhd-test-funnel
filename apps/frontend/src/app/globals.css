@@ -1,17 +1,98 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #0f1b2d;
+  --color-muted: #4b5563;
+  --color-accent: #2d64b3;
+  --color-primary: #2f6a73;
+  --color-primary-hover: #26585f;
+  --color-page: #f6f8fa;
+  --color-surface: #f1f5f9;
+  --color-selected: #e8f3fd;
+  --color-line: #d7e0ea;
+  --color-footer: #1f2b45;
+  --color-danger: #c2410c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-figtree);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+/* Tailwind v4 resets buttons to the default cursor; interactive controls should show a pointer. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+@keyframes needle-sweep {
+  from {
+    rotate: var(--needle-from);
+  }
+}
+
+@utility animate-needle {
+  animation: needle-sweep 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes progress-in {
+  from {
+    width: 0;
+  }
+}
+
+@utility animate-progress-in {
+  animation: progress-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@utility animate-chip {
+  animation:
+    fade-in 0.8s ease-out both,
+    float 6s ease-in-out infinite;
+}
+
+/* Expands and collapses a <details> smoothly where the browser can animate to `auto` height;
+   elsewhere it simply opens. Space the content with padding, not margin: a margin escapes the
+   clipped box and snaps when it hides. */
+@utility details-animated {
+  interpolate-size: allow-keywords;
+
+  &::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.3s ease,
+      opacity 0.3s ease,
+      content-visibility 0.3s allow-discrete;
+  }
+
+  &[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::details-content {
+      transition: none;
+    }
+  }
 }

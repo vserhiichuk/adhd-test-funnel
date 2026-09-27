@@ -4,7 +4,6 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  IsUrl,
   Max,
   Min,
   validateSync,
@@ -25,9 +24,6 @@ export class Env {
   @Max(65535)
   PORT: number = 4000;
 
-  @IsUrl({ require_tld: false })
-  WEB_ORIGIN: string;
-
   @IsString()
   @IsNotEmpty()
   DATABASE_URL: string;
@@ -36,9 +32,9 @@ export class Env {
   @IsNotEmpty()
   JWT_SECRET: string;
 
-  @IsString()
-  @IsNotEmpty()
-  JWT_EXPIRES_IN: string = '7d';
+  @IsInt()
+  @Min(1)
+  SESSION_TTL_DAYS: number = 7;
 }
 
 export function validateEnv(config: Record<string, unknown>): Env {

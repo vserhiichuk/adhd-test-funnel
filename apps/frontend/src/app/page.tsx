@@ -1,7 +1,16 @@
-export default function Home() {
+import { getQuiz } from "@/features/quiz/api/get-quiz";
+import { LandingHero } from "@/features/quiz/components/landing-hero";
+import { SiteHeader } from "@/shared/ui/site-header";
+
+export default async function HomePage() {
+  const quiz = await getQuiz();
+
   return (
-    <main className="flex flex-1 items-center justify-center p-4">
-      <h1 className="text-2xl font-semibold">ADHD Test</h1>
-    </main>
+    <>
+      <SiteHeader />
+      <main className="flex flex-1 items-start justify-center px-4 pt-2 pb-16 sm:items-center">
+        <LandingHero quiz={quiz} />
+      </main>
+    </>
   );
 }

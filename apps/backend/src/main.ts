@@ -17,10 +17,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.enableCors({
-    origin: config.get('WEB_ORIGIN', { infer: true }),
-    credentials: true,
-  });
   app.enableShutdownHooks();
 
   await app.listen(config.get('PORT', { infer: true }));
