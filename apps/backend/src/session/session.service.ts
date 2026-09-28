@@ -3,14 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { CookieOptions, Request, Response } from 'express';
 import { type Env, NodeEnv } from '../config/env.validation.js';
-
-const USER_COOKIE = 'session';
-const GUEST_ATTEMPT_COOKIE = 'guest_attempt';
-const GUEST_ATTEMPT_TTL_DAYS = 7;
-const SECONDS_PER_DAY = 24 * 60 * 60;
-
-type UserToken = { sub: string };
-type GuestAttemptToken = { attemptId: string };
+import {
+  GUEST_ATTEMPT_COOKIE,
+  GUEST_ATTEMPT_TTL_DAYS,
+  SECONDS_PER_DAY,
+  USER_COOKIE,
+} from './session.constants.js';
+import type { GuestAttemptToken, UserToken } from './session.types.js';
 
 @Injectable()
 export class SessionService {

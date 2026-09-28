@@ -16,6 +16,7 @@ import { SessionGuard } from '../session/session.guard.js';
 import { SessionService } from '../session/session.service.js';
 import { AuthService } from './auth.service.js';
 import { CheckEmailDto } from './dto/check-email.dto.js';
+import type { CheckEmailResponse } from './dto/check-email.response.js';
 import { SignInDto } from './dto/sign-in.dto.js';
 import { SignUpDto } from './dto/sign-up.dto.js';
 import { type UserResponse, toUserResponse } from './dto/user.response.js';
@@ -31,7 +32,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async checkEmail(
     @Body() { email }: CheckEmailDto,
-  ): Promise<{ registered: boolean }> {
+  ): Promise<CheckEmailResponse> {
     return { registered: await this.authService.isRegistered(email) };
   }
 

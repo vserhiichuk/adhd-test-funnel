@@ -31,15 +31,18 @@ apps/
   frontend/            Next.js app (port 3000), proxies /api/* to the backend
     src/
       app/             App Router routes, root layout, design tokens
-      features/        one folder per feature (quiz, auth, report): api/, components/, state
-        quiz/          landing (entry question), quiz steps, answers store, submission
-        auth/          two-step sign-up, sign-in, sign-out, zod schemas, shared form hook
-        report/        report page sections, score gauge, empty state
+      features/        one folder per feature (quiz, auth, report):
+                         api/ requests · components/ rendering only · hooks/ component logic
+                         lib/ pure helpers · constants.ts · types.ts
+        quiz/          landing (entry question), quiz steps, answers store, particle head, submission
+        auth/          two-step sign-up, sign-in, sign-out, zod schemas
+        report/        report sections, score gauge, empty state
       proxy.ts         optimistic session check for /report
       shared/
         api/           fetch clients (browser: /api, server: API_URL + forwarded cookies), ApiError
         config/        route paths
-        ui/            design-system components (Button, TextInput, Logo, header, footer)
+        lib/           cn, math and formatting helpers
+        ui/            design-system components (Button, IconButton, TextInput, TextLink, Logo, header, footer)
 docker-compose.yml     PostgreSQL 17
 ```
 
@@ -179,7 +182,7 @@ Rules the model relies on:
 - **The frontend reaches the API through its own origin.** Next.js rewrites `/api/*` to `API_URL`, so the browser only ever talks to the frontend domain: session cookies stay first-party even when the apps are deployed on different domains (`SameSite=Lax` would drop them cross-site), and the backend needs no CORS. `API_URL` is server-only and is read at build time, so it must be set before `next build`.
 - **The UI renders the quiz the API serves.** Pages fetch the current quiz version on the server (`serverApi`, rendered per request, so `next build` never calls the backend) and pass it to client components; questions, options and their order are never hard-coded. The first `profile` question is the landing's entry question, the rest are quiz steps.
 - **Quiz progress lives on the client until submission.** Answers are kept in a small `useSyncExternalStore` store mirrored to `sessionStorage` under the quiz version id, so a reload resumes at the first unanswered question and a new quiz version never reuses stale answers. Choosing the entry answer on the landing starts a fresh attempt; nothing reaches the backend until `POST /attempts`.
-- **The landing illustration is drawn, not shipped as an image.** The particle head is a canvas animation (particles assemble into the head, then drift); positions, sizes, opacity and shape (from a solid disc to a ring with a white centre) of its ~2.9k particles were traced from the design export into `head-particle-data.ts` (~17 KB) and drawn from pre-rendered sprites. It renders the final frame without animation under `prefers-reduced-motion`.
+- **The landing illustration is drawn, not shipped as an image.** The particle head is a canvas animation (particles assemble into the head, then drift); positions, sizes, opacity and shape (from a solid disc to a ring with a white centre) of its ~2.9k particles were traced from the design export into `lib/head-particles/data.ts` (~17 KB) and drawn from pre-rendered sprites. It renders the final frame without animation under `prefers-reduced-motion`.
 - **Auth forms validate early, the backend decides.** Sign-up is one react-hook-form form with two steps (email, then password, as in the design); zod schemas mirror the backend rules for instant feedback, and backend errors (`401` wrong credentials) are shown as returned.
 - **An existing account is sent to sign-in, not rejected.** After the email step sign-up calls `POST /auth/check-email`; a registered email goes to `/sign-in?email=…` with the email filled in. On the password step the email is read-only with a *Change* action that returns to the email step, so every email passes the check; a `409` there (registered in between) redirects the same way. Signing in claims the guest attempt exactly like sign-up, so the quiz just taken becomes the account's current result.
 - **Route protection is optimistic in `proxy.ts`, authoritative on the server.** `proxy.ts` only checks that a `session` cookie exists before `/report`; the backend verifies it when the report is loaded. Signed-in users are deliberately not redirected away from `/sign-in`: the frontend can't verify the JWT, so a stale cookie would bounce between the two pages.

@@ -1,11 +1,6 @@
-import type { Answers, Quiz, QuizQuestion } from "../types";
+import type { Answers, Quiz, QuizParts, QuizQuestion } from "../types";
 
-type QuizSteps = {
-  entryQuestion: QuizQuestion;
-  stepQuestions: QuizQuestion[];
-};
-
-export function splitQuiz({ questions }: Quiz): QuizSteps {
+export function splitQuiz({ questions }: Quiz): QuizParts {
   const entryQuestion = questions.find(({ kind }) => kind === "profile");
   if (!entryQuestion) {
     throw new Error("The quiz has no profile question to start with");

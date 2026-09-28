@@ -3,11 +3,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { scoreAnswers } from '../quiz/evaluation/score-answers.js';
 import { validateAnswers } from '../quiz/evaluation/validate-answers.js';
 import { QuizService } from '../quiz/quiz.service.js';
-import {
-  type CompletedAttempt,
-  toAnswerRow,
-  toCompletedAttempt,
-} from './attempt.mapper.js';
+import { toAnswerRow, toCompletedAttempt } from './attempt.mapper.js';
+import type { CompletedAttempt, SubmittedAttempt } from './attempt.types.js';
 import type { SubmitAttemptDto } from './dto/submit-attempt.dto.js';
 
 @Injectable()
@@ -20,7 +17,7 @@ export class AttemptsService {
   async submit(
     { quizVersionId, answers }: SubmitAttemptDto,
     userId: string | null,
-  ): Promise<{ id: string }> {
+  ): Promise<SubmittedAttempt> {
     const { definition } = await this.quizService.getVersion(quizVersionId);
 
     const problems = validateAnswers(definition.questions, answers);

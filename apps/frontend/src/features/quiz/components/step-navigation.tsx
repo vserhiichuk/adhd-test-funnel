@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { IconButton } from "@/shared/ui/icon-button";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/shared/ui/icons";
 import { Spinner } from "@/shared/ui/spinner";
 
@@ -26,30 +26,20 @@ export function StepNavigation({
       aria-label="Quiz navigation"
       className="mx-auto flex w-full max-w-3xl items-center justify-between"
     >
-      <NavButton aria-label="Previous question" onClick={onBack}>
+      <IconButton aria-label="Previous question" onClick={onBack}>
         <ArrowLeftIcon className="size-5" />
-      </NavButton>
+      </IconButton>
       <span className="text-muted" aria-live="polite">
         {current}/{total}
       </span>
-      <NavButton
+      <IconButton
         aria-label={isLast ? "Submit answers" : "Next question"}
         aria-busy={isSubmitting || undefined}
         disabled={!canGoNext || isSubmitting}
         onClick={onNext}
       >
         {isSubmitting ? <Spinner /> : <ArrowRightIcon className="size-5" />}
-      </NavButton>
+      </IconButton>
     </nav>
-  );
-}
-
-function NavButton(props: ComponentProps<"button">) {
-  return (
-    <button
-      type="button"
-      className="inline-flex size-10 items-center justify-center rounded-lg bg-surface text-ink transition-colors hover:bg-line focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-100"
-      {...props}
-    />
   );
 }

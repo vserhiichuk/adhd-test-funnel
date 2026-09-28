@@ -6,9 +6,8 @@ import { Button } from "@/shared/ui/button";
 import { FormMessage } from "@/shared/ui/form-message";
 import { TextInput } from "@/shared/ui/text-input";
 import { TextLink } from "@/shared/ui/text-link";
-import { signIn } from "../api/sign-in";
-import { useAuthForm } from "../hooks/use-auth-form";
-import { signInSchema } from "../schemas";
+import { SIGN_IN_DESCRIPTIONS } from "../constants";
+import { useSignInForm } from "../hooks/use-sign-in-form";
 import { AuthPanel } from "./auth-panel";
 
 type SignInFormProps = {
@@ -18,17 +17,13 @@ type SignInFormProps = {
 
 export function SignInForm({ defaultEmail }: SignInFormProps) {
   const messageId = useId();
-  const { form, submit, message, isPending } = useAuthForm(signInSchema, signIn, { defaultEmail });
+  const { form, submit, message, isPending } = useSignInForm(defaultEmail);
   const { errors } = form.formState;
 
   return (
     <AuthPanel
       title="Sign in"
-      description={
-        defaultEmail
-          ? "This email already has an account. Sign in to see your report."
-          : "Welcome back! Let’s continue your learning journey"
-      }
+      description={defaultEmail ? SIGN_IN_DESCRIPTIONS.existingAccount : SIGN_IN_DESCRIPTIONS.default}
       footer={
         <>
           New here? <TextLink href={routes.home}>Take the test</TextLink>
