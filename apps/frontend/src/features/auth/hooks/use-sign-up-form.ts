@@ -1,10 +1,9 @@
 import { type FormEvent, useState } from "react";
 import { getErrorMessage } from "@/shared/api/api-error";
-import { checkEmail } from "../api/check-email";
-import { signUp } from "../api/sign-up";
 import { redirectExistingAccount } from "../lib/redirect-existing-account";
 import { signInUrl } from "../lib/sign-in-url";
 import { signUpSchema } from "../schemas";
+import { authService } from "../services/auth.service";
 import type { SignUpStep } from "../types";
 import { useAuthForm } from "./use-auth-form";
 
@@ -12,7 +11,7 @@ import { useAuthForm } from "./use-auth-form";
 export function useSignUpForm() {
   const [step, setStep] = useState<SignUpStep>("email");
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const { form, submit, redirectTo, message, isPending } = useAuthForm(signUpSchema, signUp, {
+  const { form, submit, redirectTo, message, isPending } = useAuthForm(signUpSchema, authService.signUp, {
     redirectOnError: redirectExistingAccount,
   });
 
@@ -23,7 +22,7 @@ export function useSignUpForm() {
     const email = form.getValues("email");
     setIsCheckingEmail(true);
     try {
-      const { registered } = await checkEmail(email);
+      const { registered } = await authService.checkEmail(email);
       form.clearErrors("root");
       if (registered) {
         redirectTo(signInUrl(email));

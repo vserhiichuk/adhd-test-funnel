@@ -32,7 +32,8 @@ apps/
     src/
       app/             App Router routes, root layout, design tokens
       features/        one folder per feature (quiz, auth, report):
-                         api/ requests · components/ rendering only · hooks/ component logic
+                         services/ API requests (one per backend resource, e.g. auth.service.ts → /auth)
+                         components/ rendering only · hooks/ component logic
                          lib/ pure helpers · constants.ts · types.ts
         quiz/          landing (entry question), quiz steps, answers store, particle head, submission
         auth/          two-step sign-up, sign-in, sign-out, zod schemas
