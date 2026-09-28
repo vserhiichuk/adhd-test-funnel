@@ -1,9 +1,9 @@
-import { getQuiz } from "@/features/quiz/api/get-quiz";
 import { LandingHero } from "@/features/quiz/components/landing-hero";
+import { quizzesService } from "@/features/quiz/services/quizzes.service";
 import { SiteHeader } from "@/shared/ui/site-header";
 
 export default async function HomePage() {
-  const quiz = await getQuiz();
+  const quiz = await quizzesService.getCurrent();
 
   return (
     <>

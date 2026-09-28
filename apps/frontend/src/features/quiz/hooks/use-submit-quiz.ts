@@ -1,9 +1,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getCurrentUser } from "@/features/auth/api/get-current-user";
+import { authService } from "@/features/auth/services/auth.service";
 import { getErrorMessage } from "@/shared/api/api-error";
 import { routes } from "@/shared/config/routes";
-import { submitAttempt } from "../api/submit-attempt";
+import { attemptsService } from "../services/attempts.service";
 import type { Answers } from "../types";
 
 export function useSubmitQuiz(quizId: string) {
@@ -15,8 +15,8 @@ export function useSubmitQuiz(quizId: string) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await submitAttempt(quizId, answers);
-      const user = await getCurrentUser();
+      await attemptsService.submit(quizId, answers);
+      const user = await authService.getCurrentUser();
       router.push(user ? routes.report : routes.signUp);
     } catch (caught) {
       setError(getErrorMessage(caught));
