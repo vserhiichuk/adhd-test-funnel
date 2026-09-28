@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { routes } from "@/shared/config/routes";
 
 type LogoProps = {
   tone?: "dark" | "light";
@@ -10,7 +11,7 @@ export function Logo({ tone = "dark" }: LogoProps) {
 
   return (
     <Link
-      href="/"
+      href={routes.home}
       aria-label="BrainsMate home"
       className="inline-flex items-center gap-2 font-display text-xl font-bold"
     >

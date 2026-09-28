@@ -1,93 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { routes } from "@/shared/config/routes";
-import { FormMessage } from "@/shared/ui/form-message";
-import { useSubmitQuiz } from "../hooks/use-submit-quiz";
-import { firstUnansweredIndex, splitQuiz } from "../lib/quiz-steps";
-import { useQuizAnswers } from "../state/use-quiz-answers";
-import type { Quiz, QuizQuestion } from "../types";
-import { OptionList } from "./option-list";
-import { ProgressBar } from "./progress-bar";
-import { StepNavigation } from "./step-navigation";
+import { useStartedQuiz } from "../hooks/use-started-quiz";
+import type { Quiz } from "../types";
+import { QuizSteps } from "./quiz-steps";
 
 export function QuizFlow({ quiz }: { quiz: Quiz }) {
-  const router = useRouter();
-  const { answers, isReady } = useQuizAnswers(quiz.id);
-  const { entryQuestion, stepQuestions } = splitQuiz(quiz);
-  const hasStarted = entryQuestion.key in answers;
+  const startedQuiz = useStartedQuiz(quiz);
 
-  useEffect(() => {
-    if (isReady && !hasStarted) {
-      router.replace(routes.home);
-    }
-  }, [isReady, hasStarted, router]);
-
-  if (!isReady || !hasStarted) {
+  if (!startedQuiz) {
     return null;
   }
-
   return (
     <QuizSteps
-      quiz={quiz}
-      questions={stepQuestions}
-      initialIndex={firstUnansweredIndex(stepQuestions, answers)}
+      quizId={quiz.id}
+      questions={startedQuiz.questions}
+      initialIndex={startedQuiz.initialIndex}
     />
-  );
-}
-
-type QuizStepsProps = {
-  quiz: Quiz;
-  questions: QuizQuestion[];
-  initialIndex: number;
-};
-
-function QuizSteps({ quiz, questions, initialIndex }: QuizStepsProps) {
-  const router = useRouter();
-  const { answers, answer } = useQuizAnswers(quiz.id);
-  const { submit, isSubmitting, error } = useSubmitQuiz(quiz.id);
-  const [index, setIndex] = useState(initialIndex);
-
-  const question = questions[index];
-  const isLast = index === questions.length - 1;
-
-  function goBack() {
-    if (index === 0) {
-      router.push(routes.home);
-    } else {
-      setIndex(index - 1);
-    }
-  }
-
-  function goNext() {
-    if (isLast) {
-      void submit(answers);
-    } else {
-      setIndex(index + 1);
-    }
-  }
-
-  return (
-    <div className="flex flex-1 flex-col gap-10">
-      <ProgressBar value={(index + 1) / questions.length} />
-      <OptionList
-        question={question}
-        questionTexts={questions.map(({ text }) => text)}
-        selectedKey={answers[question.key]}
-        onSelect={(optionKey) => answer(question.key, optionKey)}
-      />
-      <div className="mt-auto flex flex-col gap-3 pt-2">
-        <FormMessage className="text-center text-base" message={error} />
-        <StepNavigation
-          current={index + 1}
-          total={questions.length}
-          canGoNext={question.key in answers}
-          isSubmitting={isSubmitting}
-          onBack={goBack}
-          onNext={goNext}
-        />
-      </div>
-    </div>
   );
 }

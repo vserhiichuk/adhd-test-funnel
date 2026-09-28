@@ -1,18 +1,7 @@
-import type { FaqItem } from '../report.types.js';
-
-export type ListContent = {
-  intro?: string;
-  items: string[];
-  note?: string;
-};
-
-export type OutcomeContent = {
-  label: string;
-  understanding: string;
-  strengths: ListContent;
-  emotionalRegulation: string | ListContent;
-  faq: FaqItem[];
-};
+import type {
+  OutcomeContent,
+  ProgressSummaries,
+} from './report-content.types.js';
 
 const HIGH_TRAITS: OutcomeContent = {
   label: 'High ADHD Traits',
@@ -124,3 +113,11 @@ const CONTENT_BY_OUTCOME = new Map<string, OutcomeContent>([
 export function getOutcomeContent(outcome: string): OutcomeContent | null {
   return CONTENT_BY_OUTCOME.get(outcome) ?? null;
 }
+
+export const PROGRESS_SUMMARIES: ProgressSummaries = {
+  higher:
+    'Your score is higher than last time: ADHD traits showed up more often in your latest answers.',
+  lower:
+    'Your score is lower than last time: ADHD traits showed up less often in your latest answers.',
+  same: 'Your score is the same as last time.',
+};

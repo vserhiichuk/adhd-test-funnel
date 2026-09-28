@@ -1,4 +1,4 @@
-import type { CompletedAttempt } from '../attempts/attempt.mapper.js';
+import type { CompletedAttempt } from '../attempts/attempt.types.js';
 import type { ReportSection } from './report.types.js';
 
 export type ReportContext = {

@@ -29,14 +29,32 @@ export type ListSection = SectionBase<"list"> & {
   note?: string;
 };
 
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
 export type FaqSection = SectionBase<"faq"> & {
-  items: { question: string; answer: string }[];
+  items: FaqItem[];
 };
 
 export type ReportSection = ScoreSection | ProgressSection | TextSection | ListSection | FaqSection;
+
+/** Sections rendered in the content column; the score is the full-width hero. */
+export type ContentSection = Exclude<ReportSection, ScoreSection>;
+
+export type ReportSectionGroups = {
+  heroes: ScoreSection[];
+  content: ContentSection[];
+};
 
 export type Report = {
   attemptId: string;
   completedAt: string;
   sections: ReportSection[];
+};
+
+export type GaugeSegment = {
+  color: string;
+  path: string;
 };

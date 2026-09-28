@@ -1,3 +1,4 @@
+import { sum } from '../../common/math.utils.js';
 import type {
   NormalizedSumScoring,
   OutcomeBand,
@@ -47,8 +48,4 @@ function pickOutcome(outcomes: OutcomeBand[], score: number): string {
     throw new Error(`No outcome covers score ${score}`);
   }
   return band.outcome;
-}
-
-function sum(values: number[]): number {
-  return values.reduce((total, value) => total + value, 0);
 }

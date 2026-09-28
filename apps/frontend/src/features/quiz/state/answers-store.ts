@@ -1,6 +1,5 @@
+import { ANSWERS_STORAGE_PREFIX } from "../constants";
 import type { Answers } from "../types";
-
-const STORAGE_PREFIX = "quiz-answers:";
 
 export const EMPTY_ANSWERS: Answers = {};
 
@@ -33,7 +32,7 @@ export const answersStore = {
 
 function loadFromStorage(quizId: string): Answers {
   try {
-    const stored = sessionStorage.getItem(STORAGE_PREFIX + quizId);
+    const stored = sessionStorage.getItem(ANSWERS_STORAGE_PREFIX + quizId);
     return stored ? (JSON.parse(stored) as Answers) : EMPTY_ANSWERS;
   } catch {
     return EMPTY_ANSWERS;
@@ -42,7 +41,7 @@ function loadFromStorage(quizId: string): Answers {
 
 function saveToStorage(quizId: string, answers: Answers): void {
   try {
-    sessionStorage.setItem(STORAGE_PREFIX + quizId, JSON.stringify(answers));
+    sessionStorage.setItem(ANSWERS_STORAGE_PREFIX + quizId, JSON.stringify(answers));
   } catch {
     // Storage can be unavailable (e.g. private mode); answers still live in memory.
   }

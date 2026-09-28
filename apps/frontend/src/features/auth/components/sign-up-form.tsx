@@ -1,75 +1,20 @@
 "use client";
 
-import { type FormEvent, useId, useState } from "react";
-import { ApiError, getErrorMessage } from "@/shared/api/api-error";
+import { useId } from "react";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { FormMessage } from "@/shared/ui/form-message";
 import { TextInput } from "@/shared/ui/text-input";
-import { TextLink } from "@/shared/ui/text-link";
-import { checkEmail } from "../api/check-email";
-import { signUp } from "../api/sign-up";
-import { useAuthForm } from "../hooks/use-auth-form";
-import { signInUrl } from "../lib/sign-in-url";
-import { signUpSchema } from "../schemas";
+import { TextButton, TextLink } from "@/shared/ui/text-link";
+import { SIGN_UP_DESCRIPTIONS } from "../constants";
+import { useSignUpForm } from "../hooks/use-sign-up-form";
 import { AuthPanel } from "./auth-panel";
-
-type Step = "email" | "password";
-
-const DESCRIPTIONS: Record<Step, string> = {
-  email: "Enter your email to access your full report",
-  password: "Enter your password to access your full report",
-};
-
-// An existing account signs in instead: signing in claims the guest attempt just as sign-up does.
-const redirectExistingAccount = (error: unknown, { email }: { email: string }) =>
-  error instanceof ApiError && error.status === 409 ? signInUrl(email) : undefined;
 
 export function SignUpForm() {
   const messageId = useId();
-  const [step, setStep] = useState<Step>("email");
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const { form, submit, redirectTo, message, isPending } = useAuthForm(signUpSchema, signUp, {
-    redirectOnError: redirectExistingAccount,
-  });
+  const { form, step, message, isPending, handleSubmit, editEmail } = useSignUpForm();
   const { errors } = form.formState;
-
-  async function continueWithEmail() {
-    if (!(await form.trigger("email"))) {
-      return;
-    }
-    const email = form.getValues("email");
-    setIsCheckingEmail(true);
-    try {
-      const { registered } = await checkEmail(email);
-      form.clearErrors("root");
-      if (registered) {
-        redirectTo(signInUrl(email));
-      } else {
-        setStep("password");
-      }
-    } catch (error) {
-      form.setError("root", { message: getErrorMessage(error) });
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  }
-
-  // The email is locked on the password step, so any change goes through the existing-account check again.
-  function editEmail() {
-    form.resetField("password");
-    form.clearErrors();
-    setStep("email");
-    form.setFocus("email");
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (step === "password") {
-      return submit(event);
-    }
-    event.preventDefault();
-    return continueWithEmail();
-  }
+  const isPasswordStep = step === "password";
 
   return (
     <AuthPanel
@@ -78,7 +23,7 @@ export function SignUpForm() {
           Discover your <span className="text-accent">ADHD</span> Profile
         </>
       }
-      description={DESCRIPTIONS[step]}
+      description={SIGN_UP_DESCRIPTIONS[step]}
       footer={
         <>
           Already have an account? <TextLink href={routes.signIn}>Sign in</TextLink>
@@ -91,24 +36,19 @@ export function SignUpForm() {
             type="email"
             label="Email"
             autoComplete="email"
-            readOnly={step === "password"}
+            readOnly={isPasswordStep}
             invalid={Boolean(errors.email)}
             aria-describedby={messageId}
             trailing={
-              step === "password" && (
-                <button
-                  type="button"
-                  onClick={editEmail}
-                  aria-label="Change email"
-                  className="text-sm font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
-                >
+              isPasswordStep && (
+                <TextButton onClick={editEmail} aria-label="Change email" className="text-sm">
                   Change
-                </button>
+                </TextButton>
               )
             }
             {...form.register("email")}
           />
-          {step === "password" && (
+          {isPasswordStep && (
             <TextInput
               type="password"
               label="Create Password"
@@ -121,7 +61,7 @@ export function SignUpForm() {
           )}
         </div>
         <FormMessage id={messageId} message={message} />
-        <Button type="submit" isLoading={isPending || isCheckingEmail} className="w-full">
+        <Button type="submit" isLoading={isPending} className="w-full">
           Get My Results
         </Button>
       </form>
