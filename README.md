@@ -20,8 +20,6 @@ There is no seed step: the backend publishes the quiz on startup.
 
 **Scenarios to try:** take the quiz as a guest → create an account → report · *Retake the test* from the report (shows the change since last time) · sign out and sign in · take the quiz as a guest again and enter a registered email at sign-up → you are sent to sign-in, and the new attempt becomes the current result.
 
-**Live:** https://adhd-test-funnel.vercel.app (API: https://adhd-test-funnel-production.up.railway.app/health). See [Trying the flow](#trying-the-flow) for the scenarios to check.
-
 ## Structure
 
 ```
