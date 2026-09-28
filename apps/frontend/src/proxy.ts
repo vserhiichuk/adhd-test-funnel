@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE } from "@/features/auth/constants";
 import { routes } from "@/shared/config/routes";
-
-// Set by the backend on sign-up / sign-in.
-const SESSION_COOKIE = "session";
 
 // Optimistic check only: the backend still verifies the session when the report is loaded.
 export function proxy(request: NextRequest) {

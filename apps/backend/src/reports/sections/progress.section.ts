@@ -1,4 +1,5 @@
-import type { SectionBuilder } from '../report-context.js';
+import { PROGRESS_SUMMARIES } from '../content/adhd-report.content.js';
+import type { SectionBuilder } from '../report-context.types.js';
 
 export const progressSection: SectionBuilder = ({ current, previous }) => {
   // Only scores from the same quiz version are comparable.
@@ -20,10 +21,10 @@ export const progressSection: SectionBuilder = ({ current, previous }) => {
 
 function summarize(change: number): string {
   if (change > 0) {
-    return 'Your score is higher than last time: ADHD traits showed up more often in your latest answers.';
+    return PROGRESS_SUMMARIES.higher;
   }
   if (change < 0) {
-    return 'Your score is lower than last time: ADHD traits showed up less often in your latest answers.';
+    return PROGRESS_SUMMARIES.lower;
   }
-  return 'Your score is the same as last time.';
+  return PROGRESS_SUMMARIES.same;
 }

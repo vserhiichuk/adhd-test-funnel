@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from "@/shared/ui/icons";
 import type { FaqSection } from "../types";
-import { SectionTitle } from "./report-layout";
+import { SectionTitle } from "./section-title";
 
 export function FaqAccordion({ section }: { section: FaqSection }) {
   return (

@@ -1,29 +1,13 @@
 import type {
-  QuizAnswer,
-  QuizAttempt,
-  QuizVersion,
-} from '../generated/prisma/client.js';
-import type { PublishedQuiz } from '../quiz/definition/quiz-definition.types.js';
-import type {
   Answer,
   QuizResult,
 } from '../quiz/evaluation/evaluation.types.js';
 import { toPublishedQuiz } from '../quiz/published-quiz.mapper.js';
-
-export type CompletedAttempt = {
-  id: string;
-  completedAt: Date;
-  quiz: PublishedQuiz;
-  result: QuizResult;
-  answers: Answer[];
-};
-
-type AnswerValue = { optionKey: string };
-
-type AttemptRow = QuizAttempt & {
-  quizVersion: QuizVersion;
-  answers: QuizAnswer[];
-};
+import type {
+  AnswerValue,
+  AttemptRow,
+  CompletedAttempt,
+} from './attempt.types.js';
 
 export function toAnswerRow({ questionKey, optionKey }: Answer) {
   const value: AnswerValue = { optionKey };

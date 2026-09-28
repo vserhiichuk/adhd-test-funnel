@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { answersStore, EMPTY_ANSWERS } from "./answers-store";
+import { answersStore, EMPTY_ANSWERS } from "../state/answers-store";
 
 const subscribeToNothing = () => () => {};
 

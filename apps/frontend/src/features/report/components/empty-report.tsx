@@ -1,6 +1,6 @@
 import { routes } from "@/shared/config/routes";
 import { ButtonLink } from "@/shared/ui/button";
-import { ReportContainer } from "./report-layout";
+import { ReportContainer } from "./report-container";
 
 export function EmptyReport() {
   return (
