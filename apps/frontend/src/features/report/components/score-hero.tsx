@@ -1,7 +1,7 @@
 import { routes } from "@/shared/config/routes";
 import { TextLink } from "@/shared/ui/text-link";
 import type { ScoreSection } from "../types";
-import { ReportContainer } from "./report-layout";
+import { ReportContainer } from "./report-container";
 import { ScoreGauge } from "./score-gauge";
 
 export function ScoreHero({ section }: { section: ScoreSection }) {

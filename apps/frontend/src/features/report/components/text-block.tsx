@@ -1,6 +1,6 @@
 import { cn } from "@/shared/lib/cn";
 import type { TextSection } from "../types";
-import { SectionTitle } from "./report-layout";
+import { SectionTitle } from "./section-title";
 
 export function TextBlock({ section }: { section: TextSection }) {
   return (

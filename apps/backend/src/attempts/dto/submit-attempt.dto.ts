@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import type { Answer } from '../../quiz/evaluation/evaluation.types.js';
 
-export class AnswerDto implements Answer {
+class AnswerDto implements Answer {
   @IsString()
   @IsNotEmpty()
   questionKey: string;

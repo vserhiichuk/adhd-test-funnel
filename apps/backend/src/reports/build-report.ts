@@ -1,4 +1,4 @@
-import type { ReportContext, SectionBuilder } from './report-context.js';
+import type { ReportContext, SectionBuilder } from './report-context.types.js';
 import type { Report } from './report.types.js';
 import { emotionalRegulationSection } from './sections/emotional-regulation.section.js';
 import { faqSection } from './sections/faq.section.js';

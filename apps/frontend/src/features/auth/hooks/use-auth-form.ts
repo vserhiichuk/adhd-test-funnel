@@ -5,9 +5,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { getErrorMessage } from "@/shared/api/api-error";
 import { routes } from "@/shared/config/routes";
-import type { Credentials, User } from "../types";
-
-type AuthRequest = (credentials: Credentials) => Promise<User>;
+import type { AuthRequest, Credentials } from "../types";
 
 type AuthFormOptions = {
   defaultEmail?: string;

@@ -2,14 +2,9 @@ import type { ReactNode } from "react";
 import { Container } from "./container";
 import { Logo } from "./logo";
 
-type SiteHeaderProps = {
-  className?: string;
-  actions?: ReactNode;
-};
-
-export function SiteHeader({ className, actions }: SiteHeaderProps) {
+export function SiteHeader({ actions }: { actions?: ReactNode }) {
   return (
-    <header className={className}>
+    <header>
       <Container className="flex h-20 items-center justify-between">
         <Logo />
         {actions}

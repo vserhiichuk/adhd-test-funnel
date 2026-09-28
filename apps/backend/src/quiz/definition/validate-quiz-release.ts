@@ -3,15 +3,13 @@ import {
   ensure,
   findDuplicates,
 } from '../../common/validation.utils.js';
-import { MAX_SCORE } from '../quiz.constants.js';
+import { KEY_PATTERN, MAX_SCORE } from '../quiz.constants.js';
 import type {
   NormalizedSumScoring,
   OutcomeBand,
   QuizQuestion,
   QuizRelease,
 } from './quiz-definition.types.js';
-
-const KEY_PATTERN = /^[a-z][a-z0-9_]*$/;
 
 export function validateQuizRelease({
   quizSlug,

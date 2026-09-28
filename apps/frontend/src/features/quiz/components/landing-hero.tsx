@@ -1,4 +1,4 @@
-import { splitQuiz } from "../lib/quiz-steps";
+import { splitQuiz } from "../lib/quiz-questions";
 import type { Quiz } from "../types";
 import { EntryQuestion } from "./entry-question";
 import { TraitVisual } from "./trait-visual";
