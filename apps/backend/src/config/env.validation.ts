@@ -8,7 +8,6 @@ import {
   Min,
   validateSync,
 } from 'class-validator';
-
 export enum NodeEnv {
   Development = 'development',
   Production = 'production',
